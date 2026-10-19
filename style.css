@@ -820,20 +820,34 @@ body.loading-active {
 .expense-totals {
   display: flex;
   gap: 14px;
-  color: var(--text-secondary);
-  font-size: 0.78rem;
-  text-align: right;
 }
 
-.expense-totals span {
+.expense-total-card {
+  min-width: 130px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
 }
 
-.expense-totals strong {
+.expense-total-card span {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.expense-total-card strong {
   color: var(--gold-primary);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+}
+
+.expenses-total-card strong {
+  color: #ff858f;
 }
 
 .expense-history-list {
