@@ -19,6 +19,8 @@ const DEFAULT_MATCH_DATA = {
   locationName: "",
   locationMapUrl: "",
   matchNotes: "",
+  collectionAmount: 0,
+  savingsAmount: 0,
   lastUpdated: new Date().toISOString(),
   players: [],
   expenses: []
@@ -176,10 +178,8 @@ function formatCurrency(amount) {
 }
 
 function getTotalCollection() {
-  const entryFee = String(currentMatchData.entryFee || "").match(/-?\d[\d,]*(?:\.\d+)?/);
-  const amount = entryFee ? Number(entryFee[0].replace(/,/g, "")) : 0;
-  const onPlayers = currentMatchData.players.filter(player => player.status === "ON").length;
-  return Number.isFinite(amount) && amount > 0 ? amount * onPlayers : 0;
+  const amount = Number(currentMatchData.collectionAmount);
+  return Number.isFinite(amount) && amount >= 0 ? amount : 0;
 }
 
 function getTotalExpenses() {
@@ -187,6 +187,15 @@ function getTotalExpenses() {
     const amount = Number(expense.amount);
     return total + (Number.isFinite(amount) && amount > 0 ? amount : 0);
   }, 0);
+}
+
+function getSavingsAmount() {
+  const amount = Number(currentMatchData.savingsAmount);
+  return Number.isFinite(amount) && amount >= 0 ? amount : 0;
+}
+
+function getRemainingBalance() {
+  return getTotalCollection() - getTotalExpenses() - getSavingsAmount();
 }
 
 function renderCounters() {
@@ -579,12 +588,48 @@ function switchAdminTab(tabName) {
     renderAdminPlayerManager();
   }
   if (tabName === "expenses") {
+    populateAdminFinanceForm();
     renderAdminExpenses();
   }
 }
 
 function capitalize(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function populateAdminFinanceForm() {
+  const collectionInput = document.getElementById("editCollectionAmount");
+  const savingsInput = document.getElementById("editSavingsAmount");
+  if (collectionInput) collectionInput.value = getTotalCollection();
+  if (savingsInput) savingsInput.value = getSavingsAmount();
+}
+
+async function handleFinanceSave(e) {
+  e.preventDefault();
+  if (!checkAdminSession() || !firebaseDb) {
+    showToast("Sign in with the authorized admin account first.", "error");
+    return;
+  }
+
+  const collectionAmount = Number(document.getElementById("editCollectionAmount").value);
+  const savingsAmount = Number(document.getElementById("editSavingsAmount").value);
+  if (!Number.isFinite(collectionAmount) || collectionAmount < 0 ||
+      !Number.isFinite(savingsAmount) || savingsAmount < 0) {
+    showToast("Enter valid collection and savings amounts.", "error");
+    return;
+  }
+
+  try {
+    await firebaseDb.ref("matchData").update({
+      collectionAmount,
+      savingsAmount,
+      lastUpdated: new Date().toISOString()
+    });
+    showToast("Collection and savings saved.", "gold");
+  } catch (error) {
+    console.error("Failed to save collection and savings:", error);
+    showToast("Could not save collection and savings. Check your connection and access settings.", "error");
+  }
 }
 
 function populateAdminForm() {
@@ -785,8 +830,16 @@ function renderExpenses() {
   const list = document.getElementById("expenseHistoryList");
   const totalCollection = document.getElementById("totalCollection");
   const totalExpenses = document.getElementById("totalExpenses");
+  const totalSavings = document.getElementById("totalSavings");
+  const remainingBalance = document.getElementById("remainingBalance");
+  const balance = getRemainingBalance();
   if (totalCollection) totalCollection.textContent = formatCurrency(getTotalCollection());
   if (totalExpenses) totalExpenses.textContent = formatCurrency(getTotalExpenses());
+  if (totalSavings) totalSavings.textContent = formatCurrency(getSavingsAmount());
+  if (remainingBalance) {
+    remainingBalance.textContent = formatCurrency(balance);
+    remainingBalance.classList.toggle("negative-balance", balance < 0);
+  }
   if (!list) return;
 
   const expenses = [...currentMatchData.expenses].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));

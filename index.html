@@ -115,12 +115,6 @@
       </div>
 
       <div class="header-actions">
-        <!-- Update status -->
-        <div class="cloud-pill" id="cloudStatusPill" title="Match updates appear across devices">
-          <i class="fa-solid fa-rotate sync-icon"></i>
-          <span class="cloud-text">Sync</span>
-        </div>
-
         <!-- Admin Login / Logged In Button -->
         <button id="adminHeaderBtn" class="btn-admin-pill" onclick="openAdminModal()">
           <i class="fa-solid fa-shield-halved"></i>
@@ -148,7 +142,7 @@
 
         <!-- Trophy, Bat, Ball, Wickets Display as Requested -->
         <div class="hero-visual-frame">
-          <img src="assets/hero-trophy.jpg" alt="Saturday Indoor Cricket Tournament Trophy Bat Ball and Wickets" class="hero-trophy-img" loading="eager">
+          <img src="assets/hero-poster.jpg" alt="Saturday Indoor Cricket Tournament Poster" class="hero-trophy-img" loading="eager">
           <div class="hero-image-overlay"></div>
           <div class="hero-glow-ring"></div>
         </div>
@@ -241,6 +235,14 @@
             <div class="expense-total-card expenses-total-card">
               <span>Total Expenses</span>
               <strong id="totalExpenses">Rs. 0</strong>
+            </div>
+            <div class="expense-total-card savings-total-card">
+              <span>Savings</span>
+              <strong id="totalSavings">Rs. 0</strong>
+            </div>
+            <div class="expense-total-card balance-total-card">
+              <span>Remaining Balance</span>
+              <strong id="remainingBalance">Rs. 0</strong>
             </div>
           </div>
         </div>
@@ -641,6 +643,20 @@
 
           <!-- ADMIN TAB: EXPENSES -->
           <div id="adminTabExpenses" class="admin-tab-content" style="display: none;">
+            <form id="financeForm" onsubmit="handleFinanceSave(event)">
+              <div class="form-group">
+                <label for="editCollectionAmount" class="form-label">TOTAL COLLECTION (Rs.)</label>
+                <input type="number" id="editCollectionAmount" class="form-control" min="0" step="0.01" placeholder="0.00" required>
+              </div>
+              <div class="form-group">
+                <label for="editSavingsAmount" class="form-label">SAVINGS (Rs.)</label>
+                <input type="number" id="editSavingsAmount" class="form-control" min="0" step="0.01" placeholder="0.00" required>
+              </div>
+              <button type="submit" class="btn-admin-submit">
+                <i class="fa-solid fa-floppy-disk"></i> Save Collection & Savings
+              </button>
+            </form>
+            <h4 class="expense-management-title">Add an expense</h4>
             <form id="expenseForm" onsubmit="handleExpenseSubmit(event)">
               <div class="form-group">
                 <label for="expenseDescription" class="form-label">EXPENSE DESCRIPTION</label>

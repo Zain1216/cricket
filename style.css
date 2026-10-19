@@ -819,10 +819,12 @@ body.loading-active {
 
 .expense-totals {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
 }
 
 .expense-total-card {
+  flex: 1 1 130px;
   min-width: 130px;
   padding: 10px 14px;
   display: flex;
@@ -847,6 +849,15 @@ body.loading-active {
 }
 
 .expenses-total-card strong {
+  color: #ff858f;
+}
+
+.savings-total-card strong,
+.balance-total-card strong {
+  color: var(--turf-green);
+}
+
+.balance-total-card strong.negative-balance {
   color: #ff858f;
 }
 
@@ -2102,6 +2113,19 @@ body.loading-active {
   }
   .hero-card {
     padding: 16px 12px;
+  }
+  .expense-history-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .expense-totals {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .expense-total-card {
+    min-width: 0;
+    padding: 9px 10px;
   }
   .main-match-title {
     font-size: 2.1rem;
