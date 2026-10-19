@@ -38,7 +38,7 @@ The public portal can read match details and submit player availability. Only th
 
 ## Match expenses
 
-The public page shows the manually entered total collection, total expenses, savings, and remaining balance alongside an itemized expense history. The remaining balance is calculated as collection minus expenses minus savings. The Firebase admin can update collection and savings, and add or delete expenses from the **Expenses** admin tab; use **Save Collection & Savings** to persist the manual amounts. These values are stored in the Realtime Database under `matchData`.
+The public page shows the manually entered total collection, total expenses, and remaining balance alongside an itemized expense history. The remaining balance is calculated as collection minus expenses. The Firebase admin can update collection and add or delete expenses from the **Expenses** admin tab; use **Save Collection** to persist the manual amount. These values are stored in the Realtime Database under `matchData`.
 
 The web app uses the Firebase project settings in `firebase-config.js`. Update that file if deploying to a different Firebase project. Firebase web API keys identify a project; access control must be enforced by Authentication and Realtime Database rules.
 

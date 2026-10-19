@@ -852,7 +852,6 @@ body.loading-active {
   color: #ff858f;
 }
 
-.savings-total-card strong,
 .balance-total-card strong {
   color: var(--turf-green);
 }

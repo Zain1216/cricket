@@ -20,7 +20,6 @@ const DEFAULT_MATCH_DATA = {
   locationMapUrl: "",
   matchNotes: "",
   collectionAmount: 0,
-  savingsAmount: 0,
   lastUpdated: new Date().toISOString(),
   players: [],
   expenses: []
@@ -189,13 +188,8 @@ function getTotalExpenses() {
   }, 0);
 }
 
-function getSavingsAmount() {
-  const amount = Number(currentMatchData.savingsAmount);
-  return Number.isFinite(amount) && amount >= 0 ? amount : 0;
-}
-
 function getRemainingBalance() {
-  return getTotalCollection() - getTotalExpenses() - getSavingsAmount();
+  return getTotalCollection() - getTotalExpenses();
 }
 
 function renderCounters() {
@@ -599,9 +593,7 @@ function capitalize(s) {
 
 function populateAdminFinanceForm() {
   const collectionInput = document.getElementById("editCollectionAmount");
-  const savingsInput = document.getElementById("editSavingsAmount");
   if (collectionInput) collectionInput.value = getTotalCollection();
-  if (savingsInput) savingsInput.value = getSavingsAmount();
 }
 
 async function handleFinanceSave(e) {
@@ -612,23 +604,20 @@ async function handleFinanceSave(e) {
   }
 
   const collectionAmount = Number(document.getElementById("editCollectionAmount").value);
-  const savingsAmount = Number(document.getElementById("editSavingsAmount").value);
-  if (!Number.isFinite(collectionAmount) || collectionAmount < 0 ||
-      !Number.isFinite(savingsAmount) || savingsAmount < 0) {
-    showToast("Enter valid collection and savings amounts.", "error");
+  if (!Number.isFinite(collectionAmount) || collectionAmount < 0) {
+    showToast("Enter a valid collection amount.", "error");
     return;
   }
 
   try {
     await firebaseDb.ref("matchData").update({
       collectionAmount,
-      savingsAmount,
       lastUpdated: new Date().toISOString()
     });
-    showToast("Collection and savings saved.", "gold");
+    showToast("Collection saved.", "gold");
   } catch (error) {
-    console.error("Failed to save collection and savings:", error);
-    showToast("Could not save collection and savings. Check your connection and access settings.", "error");
+    console.error("Failed to save collection:", error);
+    showToast("Could not save collection. Check your connection and access settings.", "error");
   }
 }
 
@@ -830,12 +819,10 @@ function renderExpenses() {
   const list = document.getElementById("expenseHistoryList");
   const totalCollection = document.getElementById("totalCollection");
   const totalExpenses = document.getElementById("totalExpenses");
-  const totalSavings = document.getElementById("totalSavings");
   const remainingBalance = document.getElementById("remainingBalance");
   const balance = getRemainingBalance();
   if (totalCollection) totalCollection.textContent = formatCurrency(getTotalCollection());
   if (totalExpenses) totalExpenses.textContent = formatCurrency(getTotalExpenses());
-  if (totalSavings) totalSavings.textContent = formatCurrency(getSavingsAmount());
   if (remainingBalance) {
     remainingBalance.textContent = formatCurrency(balance);
     remainingBalance.classList.toggle("negative-balance", balance < 0);
