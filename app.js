@@ -155,7 +155,6 @@ function renderMatchDetails() {
   const titleEl = document.getElementById("displayMatchTitle");
   const feeEl = document.getElementById("displayEntryFee");
   const timeEl = document.getElementById("displayMatchTime");
-  const balanceEl = document.getElementById("displayRemainingBalance");
   const locNameEl = document.getElementById("displayLocationName");
   const locLinkEl = document.getElementById("displayLocationLink");
   const notesText = document.getElementById("notesText");
@@ -163,7 +162,6 @@ function renderMatchDetails() {
   if (titleEl) titleEl.textContent = currentMatchData.matchTitle || "MATCH DETAILS NOT SET";
   if (feeEl) feeEl.textContent = currentMatchData.entryFee || "Not set";
   if (timeEl) timeEl.textContent = currentMatchData.matchTime || "Not set";
-  if (balanceEl) balanceEl.textContent = formatCurrency(getRemainingBalance());
   if (locNameEl) locNameEl.textContent = currentMatchData.locationName || "Not set";
   
   if (locLinkEl) {
@@ -173,29 +171,8 @@ function renderMatchDetails() {
   if (notesText) notesText.textContent = currentMatchData.matchNotes || "Match information will appear here.";
 }
 
-function parseCurrencyAmount(value) {
-  const parsed = Number(String(value || "").replace(/,/g, "").replace(/[^\d.-]/g, ""));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-}
-
 function formatCurrency(amount) {
   return `Rs. ${Number(amount || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
-}
-
-function getTotalCollected() {
-  const availablePlayers = currentMatchData.players.filter(player => player.status === "ON").length;
-  return availablePlayers * parseCurrencyAmount(currentMatchData.entryFee);
-}
-
-function getTotalExpenses() {
-  return currentMatchData.expenses.reduce((total, expense) => {
-    const amount = Number(expense.amount);
-    return total + (Number.isFinite(amount) && amount > 0 ? amount : 0);
-  }, 0);
-}
-
-function getRemainingBalance() {
-  return getTotalCollected() - getTotalExpenses();
 }
 
 function renderCounters() {
@@ -435,7 +412,7 @@ function shareRosterToWhatsApp() {
 
   let msg = `🏏 *${currentMatchData.matchTitle}* 🏏\n`;
   msg += `📅 *Time:* ${currentMatchData.matchTime}\n`;
-  msg += `💰 *Entry Fee:* ${currentMatchData.entryFee} | *Remaining Balance:* ${formatCurrency(getRemainingBalance())}\n`;
+  msg += `💰 *Entry Fee:* ${currentMatchData.entryFee}\n`;
   msg += `📍 *Venue:* ${currentMatchData.locationName}\n`;
   msg += `🗺️ *Map:* ${currentMatchData.locationMapUrl}\n\n`;
 
@@ -792,17 +769,6 @@ async function deleteExpense(id) {
 
 function renderExpenses() {
   const list = document.getElementById("expenseHistoryList");
-  const totals = [
-    ["totalCollected", formatCurrency(getTotalCollected())],
-    ["totalExpenses", formatCurrency(getTotalExpenses())],
-    ["adminTotalCollected", formatCurrency(getTotalCollected())],
-    ["adminTotalExpenses", formatCurrency(getTotalExpenses())],
-    ["adminRemainingBalance", formatCurrency(getRemainingBalance())]
-  ];
-  totals.forEach(([id, amount]) => {
-    const element = document.getElementById(id);
-    if (element) element.textContent = amount;
-  });
   if (!list) return;
 
   const expenses = [...currentMatchData.expenses].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));

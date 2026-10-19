@@ -181,7 +181,7 @@
           <span class="section-sub">MATCH SPECIFICATIONS</span>
           <h3 class="section-title"><i class="fa-solid fa-clipboard-list"></i> MATCH DETAILS</h3>
         </div>
-        <span class="badge-fixed"><i class="fa-solid fa-lock"></i> Fixed Details</span>
+        <span class="badge-fixed"><i class="fa-solid fa-cloud"></i> Firebase Live</span>
       </div>
 
       <div class="details-grid">
@@ -211,20 +211,7 @@
           <div class="detail-badge-pill">Fixed</div>
         </div>
 
-        <!-- 3. LIVE REMAINING BALANCE -->
-        <div class="detail-card balance-card">
-          <div class="detail-icon-wrap">
-            <i class="fa-solid fa-wallet"></i>
-          </div>
-          <div class="detail-info">
-            <span class="detail-label">REMAINING BALANCE</span>
-            <div class="detail-value" id="displayRemainingBalance">Rs. 0</div>
-            <span class="detail-sub">Entry fee × ON players − expenses</span>
-          </div>
-          <div class="detail-badge-pill">Live</div>
-        </div>
-
-        <!-- 4. LOCATION AS GOOGLE MAP LINK (Fixed - Admin Editable) -->
+        <!-- 3. LOCATION AS GOOGLE MAP LINK (Fixed - Admin Editable) -->
         <div class="detail-card location-card">
           <div class="detail-icon-wrap">
             <i class="fa-solid fa-map-location-dot"></i>
@@ -243,12 +230,8 @@
       <div class="expense-history">
         <div class="expense-history-header">
           <div>
-            <span class="section-sub">LIVE FINANCIAL SUMMARY</span>
+            <span class="section-sub">LIVE FIREBASE RECORDS</span>
             <h4 class="section-title"><i class="fa-solid fa-receipt"></i> MATCH EXPENSES</h4>
-          </div>
-          <div class="expense-totals">
-            <span>Collected <strong id="totalCollected">Rs. 0</strong></span>
-            <span>Expenses <strong id="totalExpenses">Rs. 0</strong></span>
           </div>
         </div>
         <div class="expense-history-list" id="expenseHistoryList">
@@ -287,7 +270,7 @@
                 id="playerName" 
                 name="playerName" 
                 class="form-control" 
-                placeholder="Enter player name (e.g. Sameer, Hamza, Ali...)" 
+                placeholder="Enter your full name"
                 required 
                 maxlength="40"
                 autocomplete="name"
@@ -648,11 +631,6 @@
 
           <!-- ADMIN TAB: EXPENSES -->
           <div id="adminTabExpenses" class="admin-tab-content" style="display: none;">
-            <div class="expense-admin-summary">
-              <div><span>Total collected</span><strong id="adminTotalCollected">Rs. 0</strong></div>
-              <div><span>Total expenses</span><strong id="adminTotalExpenses">Rs. 0</strong></div>
-              <div><span>Remaining balance</span><strong id="adminRemainingBalance">Rs. 0</strong></div>
-            </div>
             <form id="expenseForm" onsubmit="handleExpenseSubmit(event)">
               <div class="form-group">
                 <label for="expenseDescription" class="form-label">EXPENSE DESCRIPTION</label>
