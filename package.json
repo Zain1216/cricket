@@ -1,0 +1,23 @@
+{
+  "name": "sam-cricket-portal",
+  "version": "1.0.0",
+  "description": "Backend API & Server for Saturday Indoor Cricket Match Portal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "cricket",
+    "indoor-cricket",
+    "match-portal",
+    "rsvp",
+    "admin"
+  ],
+  "author": "Sameer Arif",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

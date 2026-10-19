@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SATURDAY INDOOR CRICKET MATCH | Sam Cricket Portal</title>
+  
+  <!-- SEO & Social Sharing -->
+  <meta name="description" content="Saturday Indoor Cricket Match Portal. Check Entry Fee, Time, Location, and Submit ON/OFF Player Availability.">
+  <meta name="theme-color" content="#080f09">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="assets/hero-trophy.jpg">
+
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="loading-active">
+
+  <!-- ========================================================= -->
+  <!-- LOADER / SPLASH SCREEN WITH CRICKET BAT, BALL & WICKET ILLUSION -->
+  <!-- ========================================================= -->
+  <div id="cricket-loader" class="loader-overlay" role="dialog" aria-modal="true">
+    <div class="loader-backdrop"></div>
+    <div class="loader-stadium-lights">
+      <div class="light light-left"></div>
+      <div class="light light-center"></div>
+      <div class="light light-right"></div>
+    </div>
+    
+    <div class="loader-content">
+      <!-- 3D Cricket Illusion Scene -->
+      <div class="illusion-arena">
+        <!-- Pitch Strip -->
+        <div class="pitch-strip"></div>
+        
+        <!-- Wickets / Stumps with LED Bails -->
+        <div class="wickets-group">
+          <div class="bails">
+            <div class="bail bail-1"></div>
+            <div class="bail bail-2"></div>
+          </div>
+          <div class="stump stump-leg"></div>
+          <div class="stump stump-mid"></div>
+          <div class="stump stump-off"></div>
+          <div class="stump-shadow"></div>
+        </div>
+
+        <!-- Cricket Bat Illusion -->
+        <div class="cricket-bat-illusion">
+          <div class="bat-handle"></div>
+          <div class="bat-grip-rings"></div>
+          <div class="bat-blade">
+            <span class="bat-sticker">SS</span>
+          </div>
+        </div>
+
+        <!-- Bowling / Spinning Red Cricket Ball -->
+        <div class="cricket-ball-illusion">
+          <div class="ball-seam"></div>
+          <div class="ball-glow"></div>
+          <div class="ball-shadow"></div>
+        </div>
+
+        <!-- Impact Shockwave -->
+        <div class="impact-ring"></div>
+      </div>
+
+      <!-- Match Text Title as Requested -->
+      <div class="loader-text-wrapper">
+        <div class="loader-badge">
+          <i class="fa-solid fa-bolt"></i> OFFICIAL MATCH PORTAL
+        </div>
+        <h1 class="loader-title">SATURDAY INDOOR CRICKET MATCH</h1>
+        <p class="loader-sub">Preparing Pitch, Stumps & Live Squad...</p>
+      </div>
+
+      <!-- Loading Bar -->
+      <div class="loader-progress-bar">
+        <div class="progress-fill" id="loaderProgress"></div>
+        <div class="rolling-ball-indicator"></div>
+      </div>
+
+      <button id="skipLoaderBtn" class="btn-skip-loader">
+        Enter Portal <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- APP HEADER / NAVBAR -->
+  <!-- ========================================================= -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-trophy brand-icon"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">SAM CRICKET PORTAL</span>
+          <span class="brand-subtitle"><i class="fa-solid fa-circle live-pulse"></i> LIVE MATCH DAY</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Cloud Sync Indicator -->
+        <div class="cloud-pill" id="cloudStatusPill" title="Multi-device live sync active">
+          <i class="fa-solid fa-rotate sync-icon"></i>
+          <span class="cloud-text">Live Sync</span>
+        </div>
+
+        <!-- Admin Login / Logged In Button -->
+        <button id="adminHeaderBtn" class="btn-admin-pill" onclick="openAdminModal()">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span id="adminBtnText">Admin Login</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- MAIN CONTAINER -->
+  <!-- ========================================================= -->
+  <main class="main-content">
+    
+    <!-- Hero Tournament Poster & Title Banner -->
+    <section class="hero-section">
+      <div class="hero-card">
+        <div class="hero-lights"></div>
+        
+        <!-- Tournament Badge -->
+        <div class="hero-top-bar">
+          <span class="pill-tag"><i class="fa-solid fa-fire"></i> INDOOR LEAGUE 2026</span>
+          <span class="pill-tag gold-tag"><i class="fa-solid fa-crown"></i> CHAMPIONSHIP</span>
+        </div>
+
+        <!-- Trophy, Bat, Ball, Wickets Display as Requested -->
+        <div class="hero-visual-frame">
+          <img src="assets/hero-trophy.jpg" alt="Saturday Indoor Cricket Tournament Trophy Bat Ball and Wickets" class="hero-trophy-img" loading="eager">
+          <div class="hero-image-overlay"></div>
+          <div class="hero-glow-ring"></div>
+        </div>
+
+        <!-- Hero Match Heading -->
+        <div class="hero-heading-group">
+          <p class="tagline">ONE GAME &bull; ONE PASSION &bull; ONE CHAMPION</p>
+          <h2 class="main-match-title" id="displayMatchTitle">SATURDAY INDOOR CRICKET MATCH</h2>
+          <div class="divider-gold">
+            <span></span>
+            <i class="fa-solid fa-baseball-bat-ball"></i>
+            <span></span>
+          </div>
+          
+          <!-- Match Day Countdown & Notice -->
+          <div class="match-notice-banner" id="displayMatchNotes">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span id="notesText">Registration is live! Confirm your availability below before slots are filled.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- MATCH DETAILS SECTION (FIXED - ADMIN ONLY EDITABLE) -->
+    <!-- ========================================================= -->
+    <section class="section-details">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-sub">MATCH SPECIFICATIONS</span>
+          <h3 class="section-title"><i class="fa-solid fa-clipboard-list"></i> MATCH DETAILS</h3>
+        </div>
+        <span class="badge-fixed"><i class="fa-solid fa-lock"></i> Fixed Details</span>
+      </div>
+
+      <div class="details-grid">
+        <!-- 1. ENTRY FEE (Fixed - Admin Editable) -->
+        <div class="detail-card fee-card">
+          <div class="detail-icon-wrap">
+            <i class="fa-solid fa-money-bill-wave"></i>
+          </div>
+          <div class="detail-info">
+            <span class="detail-label">ENTRY FEE</span>
+            <div class="detail-value" id="displayEntryFee">Rs. 500</div>
+            <span class="detail-sub">Per Player / Head</span>
+          </div>
+          <div class="detail-badge-pill">Fixed</div>
+        </div>
+
+        <!-- 2. TIME (Fixed - Admin Editable) -->
+        <div class="detail-card time-card">
+          <div class="detail-icon-wrap">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div class="detail-info">
+            <span class="detail-label">TIME</span>
+            <div class="detail-value" id="displayMatchTime">Saturday 09:00 PM - 12:00 AM</div>
+            <span class="detail-sub">Report 15 mins prior</span>
+          </div>
+          <div class="detail-badge-pill">Fixed</div>
+        </div>
+
+        <!-- 3. SAVING (Fixed - Admin Editable) -->
+        <div class="detail-card saving-card">
+          <div class="detail-icon-wrap">
+            <i class="fa-solid fa-piggy-bank"></i>
+          </div>
+          <div class="detail-info">
+            <span class="detail-label">SAVING / POOL</span>
+            <div class="detail-value" id="displaySaving">Rs. 2,000</div>
+            <span class="detail-sub">Reserved Match Savings</span>
+          </div>
+          <div class="detail-badge-pill">Fixed</div>
+        </div>
+
+        <!-- 4. LOCATION AS GOOGLE MAP LINK (Fixed - Admin Editable) -->
+        <div class="detail-card location-card">
+          <div class="detail-icon-wrap">
+            <i class="fa-solid fa-map-location-dot"></i>
+          </div>
+          <div class="detail-info">
+            <span class="detail-label">LOCATION</span>
+            <div class="detail-value location-text" id="displayLocationName">Indoor Cricket Arena</div>
+            <a href="https://maps.google.com/?q=Indoor+Cricket+Arena" target="_blank" rel="noopener noreferrer" class="map-link-btn" id="displayLocationLink">
+              <i class="fa-solid fa-diamond-turn-right"></i> Open in Google Maps
+            </a>
+          </div>
+          <div class="detail-badge-pill">Fixed</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- PLAYER AVAILABILITY FORM (ON / OFF / NAME + SUBMIT) -->
+    <!-- ========================================================= -->
+    <section class="section-rsvp">
+      <div class="rsvp-card">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-sub">CONFIRM YOUR ATTENDANCE</span>
+            <h3 class="section-title"><i class="fa-solid fa-user-check"></i> PLAYER AVAILABILITY</h3>
+          </div>
+          <div class="live-counter-pill" onclick="openViewMoreModal()">
+            <span class="dot-green"></span> <span id="summaryOnCount">0</span> ON &bull; 
+            <span class="dot-red"></span> <span id="summaryOffCount">0</span> OFF
+          </div>
+        </div>
+
+        <form id="rsvpForm" class="rsvp-form" onsubmit="handleRsvpSubmit(event)">
+          
+          <!-- NAME Field -->
+          <div class="form-group">
+            <label for="playerName" class="form-label">
+              <i class="fa-solid fa-signature"></i> YOUR FULL NAME
+            </label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input 
+                type="text" 
+                id="playerName" 
+                name="playerName" 
+                class="form-control" 
+                placeholder="Enter player name (e.g. Sameer, Hamza, Ali...)" 
+                required 
+                maxlength="40"
+                autocomplete="name"
+              >
+            </div>
+            <span class="input-hint">Apna pura naam likhein taake roster mai register ho saky</span>
+          </div>
+
+          <!-- ON / OFF Radio Options as Requested -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fa-solid fa-toggle-on"></i> SELECT STATUS (ON / OFF)
+            </label>
+            
+            <div class="status-options-grid">
+              <!-- ON Option -->
+              <label class="status-card status-card-on" for="statusOn">
+                <input type="radio" id="statusOn" name="playerStatus" value="ON" checked>
+                <div class="status-card-inner">
+                  <div class="status-badge-icon">
+                    <i class="fa-solid fa-baseball-bat-ball"></i>
+                  </div>
+                  <div class="status-meta">
+                    <span class="status-title">ON (I'M PLAYING)</span>
+                    <span class="status-desc">Available for Saturday match 🏏</span>
+                  </div>
+                  <div class="status-check-circle">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </div>
+              </label>
+
+              <!-- OFF Option -->
+              <label class="status-card status-card-off" for="statusOff">
+                <input type="radio" id="statusOff" name="playerStatus" value="OFF">
+                <div class="status-card-inner">
+                  <div class="status-badge-icon">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                  </div>
+                  <div class="status-meta">
+                    <span class="status-title">OFF (UNAVAILABLE)</span>
+                    <span class="status-desc">Can't play this Saturday ❌</span>
+                  </div>
+                  <div class="status-check-circle">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-submit-status" id="submitStatusBtn">
+            <span class="btn-text"><i class="fa-solid fa-paper-plane"></i> SUBMIT AVAILABILITY</span>
+            <div class="btn-glow"></div>
+          </button>
+        </form>
+
+        <!-- ========================================================= -->
+        <!-- VIEW MORE BUTTON AS REQUESTED -->
+        <!-- ========================================================= -->
+        <div class="view-more-banner">
+          <div class="view-more-info">
+            <i class="fa-solid fa-users-viewfinder"></i>
+            <div>
+              <strong>Check Who's Playing!</strong>
+              <p>See all players who selected ON or OFF for this Saturday.</p>
+            </div>
+          </div>
+
+          <button type="button" class="btn-view-more" id="viewMoreBtn" onclick="openViewMoreModal()">
+            <span>VIEW MORE</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Admin Quick Bar (Only visible if Admin is logged in) -->
+    <div id="adminQuickBar" class="admin-quick-bar" style="display: none;">
+      <div class="admin-bar-inner">
+        <div class="admin-bar-title">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Admin Session Active (Sameer Arif)</span>
+        </div>
+        <div class="admin-bar-actions">
+          <button class="btn-admin-action" onclick="openAdminModal()">
+            <i class="fa-solid fa-sliders"></i> Manage Match
+          </button>
+          <button class="btn-admin-action btn-danger" onclick="handleAdminLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: VIEW MORE (ON & OFF PLAYERS ROSTER) -->
+  <!-- ========================================================= -->
+  <div id="viewMoreModal" class="modal-backdrop" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-card modal-view-more">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-sub">SATURDAY INDOOR CRICKET</span>
+          <h3 class="modal-title"><i class="fa-solid fa-users"></i> SQUAD ROSTER (VIEW MORE)</h3>
+        </div>
+        <button class="modal-close-btn" onclick="closeViewMoreModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="roster-search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="rosterSearchInput" placeholder="Search player name..." oninput="handleRosterSearch(this.value)">
+      </div>
+
+      <!-- Tab Buttons for ON / OFF -->
+      <div class="roster-tabs">
+        <button class="roster-tab active" id="tabOnBtn" onclick="switchRosterTab('ON')">
+          <i class="fa-solid fa-circle-check tab-icon-on"></i>
+          <span>ON (PLAYING)</span>
+          <span class="tab-count-badge on-badge" id="modalOnBadge">0</span>
+        </button>
+        <button class="roster-tab" id="tabOffBtn" onclick="switchRosterTab('OFF')">
+          <i class="fa-solid fa-circle-xmark tab-icon-off"></i>
+          <span>OFF (NOT PLAYING)</span>
+          <span class="tab-count-badge off-badge" id="modalOffBadge">0</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="modal-body">
+        
+        <!-- ON PLAYERS LIST -->
+        <div id="rosterListOn" class="roster-list-container">
+          <div class="list-heading-info">
+            <span class="status-dot dot-green"></span>
+            <strong>PLAYERS READY TO PLAY (ON)</strong>
+            <span class="roster-count-chip" id="onCountChip">0 Players</span>
+          </div>
+          <div class="player-cards-list" id="playerListOnItems">
+            <!-- Dynamically Populated -->
+          </div>
+        </div>
+
+        <!-- OFF PLAYERS LIST -->
+        <div id="rosterListOff" class="roster-list-container" style="display: none;">
+          <div class="list-heading-info">
+            <span class="status-dot dot-red"></span>
+            <strong>PLAYERS UNAVAILABLE (OFF)</strong>
+            <span class="roster-count-chip" id="offCountChip">0 Players</span>
+          </div>
+          <div class="player-cards-list" id="playerListOffItems">
+            <!-- Dynamically Populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button class="btn-modal-action whatsapp-btn" onclick="shareRosterToWhatsApp()">
+          <i class="fa-brands fa-whatsapp"></i> Share Roster to WhatsApp
+        </button>
+        <button class="btn-modal-action close-modal-btn" onclick="closeViewMoreModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADMIN LOGIN & ADMIN MANAGEMENT PANEL -->
+  <!-- ========================================================= -->
+  <div id="adminModal" class="modal-backdrop" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-card modal-admin">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-sub">ORGANIZER CONTROL</span>
+          <h3 class="modal-title" id="adminModalTitle">
+            <i class="fa-solid fa-shield-halved"></i> ADMIN PORTAL
+          </h3>
+        </div>
+        <button class="modal-close-btn" onclick="closeAdminModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- VIEW 1: ADMIN LOGIN FORM (When Not Logged In) -->
+        <div id="adminLoginFormView">
+          <div class="admin-login-banner">
+            <i class="fa-solid fa-lock login-lock-icon"></i>
+            <h4>Admin Authentication</h4>
+            <p>Sirf authorized admin match ki details phone se change kar sakta hai.</p>
+          </div>
+
+          <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+            <div class="form-group">
+              <label for="adminEmail" class="form-label">
+                <i class="fa-solid fa-envelope"></i> ADMIN EMAIL
+              </label>
+              <div class="input-wrap">
+                <i class="fa-solid fa-at input-icon"></i>
+                <input 
+                  type="email" 
+                  id="adminEmail" 
+                  class="form-control" 
+                  placeholder="sameerarif133@gmail.com" 
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="adminPassword" class="form-label">
+                <i class="fa-solid fa-key"></i> ADMIN PASSWORD
+              </label>
+              <div class="input-wrap">
+                <i class="fa-solid fa-lock input-icon"></i>
+                <input 
+                  type="password" 
+                  id="adminPassword" 
+                  class="form-control" 
+                  placeholder="Enter password" 
+                  required
+                >
+                <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('adminPassword')">
+                  <i class="fa-solid fa-eye" id="adminPasswordEye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="adminLoginError" class="login-error-alert" style="display: none;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Ghalat email ya password! Please check credentials.</span>
+            </div>
+
+            <button type="submit" class="btn-admin-submit">
+              <i class="fa-solid fa-right-to-bracket"></i> Login As Admin
+            </button>
+          </form>
+        </div>
+
+        <!-- VIEW 2: ADMIN MANAGEMENT DASHBOARD (When Logged In) -->
+        <div id="adminDashboardView" style="display: none;">
+          
+          <div class="admin-welcome-banner">
+            <div class="admin-avatar">
+              <i class="fa-solid fa-crown"></i>
+            </div>
+            <div>
+              <div class="admin-badge-online">Verified Admin</div>
+              <h4 class="admin-name">Sameer Arif</h4>
+              <span class="admin-email-text">sameerarif133@gmail.com</span>
+            </div>
+          </div>
+
+          <div class="admin-tabs">
+            <button class="admin-tab-btn active" id="btnAdminTabDetails" onclick="switchAdminTab('details')">
+              <i class="fa-solid fa-pen-to-square"></i> Match Details
+            </button>
+            <button class="admin-tab-btn" id="btnAdminTabPlayers" onclick="switchAdminTab('players')">
+              <i class="fa-solid fa-users-gear"></i> Manage Players
+            </button>
+            <button class="admin-tab-btn" id="btnAdminTabCloud" onclick="switchAdminTab('cloud')">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Live Cloud
+            </button>
+          </div>
+
+          <!-- ADMIN TAB 1: EDIT MATCH DETAILS -->
+          <div id="adminTabDetails" class="admin-tab-content">
+            <form id="adminDetailsForm" onsubmit="handleAdminDetailsSave(event)">
+              
+              <!-- Match Title -->
+              <div class="form-group">
+                <label for="editMatchTitle" class="form-label">MATCH TITLE</label>
+                <input type="text" id="editMatchTitle" class="form-control" required>
+              </div>
+
+              <!-- Entry Fee -->
+              <div class="form-group">
+                <label for="editEntryFee" class="form-label">
+                  <i class="fa-solid fa-money-bill-wave"></i> ENTRY FEE
+                </label>
+                <div class="input-wrap">
+                  <input type="text" id="editEntryFee" class="form-control" placeholder="e.g. Rs. 500" required>
+                </div>
+              </div>
+
+              <!-- Time -->
+              <div class="form-group">
+                <label for="editMatchTime" class="form-label">
+                  <i class="fa-solid fa-clock"></i> MATCH TIME
+                </label>
+                <div class="input-wrap">
+                  <input type="text" id="editMatchTime" class="form-control" placeholder="e.g. Saturday 09:00 PM - 12:00 AM" required>
+                </div>
+              </div>
+
+              <!-- Saving -->
+              <div class="form-group">
+                <label for="editSaving" class="form-label">
+                  <i class="fa-solid fa-piggy-bank"></i> SAVING / POOL
+                </label>
+                <div class="input-wrap">
+                  <input type="text" id="editSaving" class="form-control" placeholder="e.g. Rs. 2,000" required>
+                </div>
+              </div>
+
+              <!-- Location Name -->
+              <div class="form-group">
+                <label for="editLocationName" class="form-label">
+                  <i class="fa-solid fa-location-dot"></i> LOCATION NAME / VENUE
+                </label>
+                <div class="input-wrap">
+                  <input type="text" id="editLocationName" class="form-control" placeholder="e.g. Arena Indoor Sports Complex" required>
+                </div>
+              </div>
+
+              <!-- Location Google Map Link -->
+              <div class="form-group">
+                <label for="editLocationLink" class="form-label">
+                  <i class="fa-solid fa-map-pin"></i> LOCATION AS A GOOGLE MAP LINK
+                </label>
+                <div class="input-wrap">
+                  <input type="url" id="editLocationLink" class="form-control" placeholder="https://maps.google.com/?q=..." required>
+                </div>
+              </div>
+
+              <!-- Match Notice / Instructions -->
+              <div class="form-group">
+                <label for="editMatchNotes" class="form-label">
+                  <i class="fa-solid fa-bullhorn"></i> MATCH ANNOUNCEMENT / INSTRUCTIONS
+                </label>
+                <textarea id="editMatchNotes" class="form-control" rows="2" placeholder="Instructions for players..."></textarea>
+              </div>
+
+              <button type="submit" class="btn-admin-submit" id="saveDetailsBtn">
+                <i class="fa-solid fa-floppy-disk"></i> Save & Sync to All Phones
+              </button>
+            </form>
+          </div>
+
+          <!-- ADMIN TAB 2: MANAGE PLAYERS -->
+          <div id="adminTabPlayers" class="admin-tab-content" style="display: none;">
+            <div class="admin-players-actions">
+              <button class="btn-mini btn-danger-outline" onclick="confirmResetAllPlayers()">
+                <i class="fa-solid fa-trash-can"></i> Reset All Players (New Match)
+              </button>
+              <button class="btn-mini btn-whatsapp" onclick="shareRosterToWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp List
+              </button>
+            </div>
+
+            <div class="admin-player-list-wrap" id="adminPlayerManagementList">
+              <!-- Dynamically populated with delete/toggle buttons for admin -->
+            </div>
+          </div>
+
+          <!-- ADMIN TAB 3: CLOUD SYNC SETTINGS -->
+          <div id="adminTabCloud" class="admin-tab-content" style="display: none;">
+            <div class="cloud-settings-card">
+              <h4><i class="fa-solid fa-cloud"></i> Multi-Phone Realtime Sync</h4>
+              <p>Jab bhi koi player apne phone se submit karega ya admin phone se details change karega, to sabhi phones par live update show hoga.</p>
+
+              <div class="cloud-status-box">
+                <div class="cloud-status-indicator">
+                  <span class="status-pulse-dot"></span>
+                  <span id="cloudStatusText">Cloud Sync: Active & Connected</span>
+                </div>
+                <small id="cloudLastSyncTime">Last updated: Just now</small>
+              </div>
+
+              <div class="form-group" style="margin-top: 15px;">
+                <label class="form-label">CLOUD STORAGE ID</label>
+                <input type="text" id="customCloudIdInput" class="form-control" readonly>
+                <span class="input-hint">Default shared cloud storage for this cricket portal.</span>
+              </div>
+
+              <div class="cloud-btn-row">
+                <button class="btn-mini btn-secondary" onclick="forceCloudSync(true)">
+                  <i class="fa-solid fa-rotate"></i> Sync Cloud Now
+                </button>
+                <button class="btn-mini btn-primary" onclick="createNewCloudRoom()">
+                  <i class="fa-solid fa-plus"></i> Create New Cloud Room
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logout Button -->
+          <div class="admin-logout-wrap">
+            <button class="btn-logout" onclick="handleAdminLogout()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout Admin
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <i class="fa-solid fa-baseball-bat-ball"></i>
+        <span>SATURDAY INDOOR CRICKET</span>
+      </div>
+      <p class="footer-copy">Crafted for Saturday Cricket Warriors &bull; Organized by Sameer Arif</p>
+      <div class="footer-portal-name">
+        <i class="fa-solid fa-globe"></i> Netlify Link: <code>sam-cricket-potal.netlify.app</code>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript Application -->
+  <script src="app.js"></script>
+</body>
+</html>

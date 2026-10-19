@@ -1,0 +1,21 @@
+{
+  "name": "Saturday Indoor Cricket Match Portal",
+  "short_name": "Sam Cricket",
+  "description": "Live match details, entry fee, location, and player availability roster for Saturday Indoor Cricket.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050b07",
+  "theme_color": "#050b07",
+  "icons": [
+    {
+      "src": "assets/hero-trophy.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/hero-trophy.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
