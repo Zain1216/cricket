@@ -36,9 +36,9 @@ Cricket attendance portal with Firebase Authentication for admin access and Fire
 
 The public portal can read match details and submit player availability. Only the authorized Firebase account can change match details or create/delete expenses. Player availability is intentionally writable without admin sign-in so players can RSVP; keep the validation rules enabled and do not use Firebase test mode.
 
-## Match balance and expenses
+## Match expenses
 
-The public page shows an itemized expense history. The Firebase admin can add or delete expenses from the **Expenses** admin tab. Expected entry fees are calculated as **entry fee × players marked ON**; remaining balance is expected entry fees minus all recorded expenses. This estimates fees from attendance and does not verify which players have paid.
+The public page shows an itemized expense history. The Firebase admin can add or delete expenses from the **Expenses** admin tab. Each expense is stored in the Realtime Database with its description, amount, and date. The portal does not calculate or display a balance.
 
 The web app uses the Firebase project settings in `firebase-config.js`. Update that file if deploying to a different Firebase project. Firebase web API keys identify a project; access control must be enforced by Authentication and Realtime Database rules.
 

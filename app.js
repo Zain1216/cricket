@@ -209,7 +209,7 @@ async function handleRsvpSubmit(e) {
   CricketAudio.playBatHit();
 
   if (!firebaseDb) {
-    showToast("Firebase is not connected. Availability was not saved.", "error");
+    showToast("The data service is not connected. Availability was not saved.", "error");
     return;
   }
 
@@ -254,7 +254,7 @@ async function handleRsvpSubmit(e) {
     showToast(`"${name}" availability saved as ${status}.`, status === "ON" ? "gold" : "info");
   } catch (error) {
     console.error("Failed to save player availability:", error);
-    showToast("Could not save availability to Firebase. Check your connection and database rules.", "error");
+    showToast("Could not save availability. Check your connection and access settings.", "error");
     return;
   }
 
@@ -486,23 +486,23 @@ async function handleAdminLogin(e) {
   if (!firebaseAuth || emailInput.toLowerCase() !== APP_CONFIG.adminEmail.toLowerCase()) {
     if (errorAlert) {
       errorAlert.style.display = "flex";
-      errorAlert.textContent = "Use the authorized Firebase admin email.";
+      errorAlert.textContent = "Use the authorized admin email.";
     }
     return;
   }
   try {
     await firebaseAuth.signInWithEmailAndPassword(emailInput, passInput);
     if (errorAlert) errorAlert.style.display = "none";
-    showToast("Firebase admin sign-in successful.", "gold");
+    showToast("Admin sign-in successful.", "gold");
     CricketAudio.playSuccessChime();
     openAdminModal();
   } catch (error) {
     console.error("Firebase admin sign-in failed:", error);
     if (errorAlert) {
       errorAlert.style.display = "flex";
-      errorAlert.textContent = "Firebase sign-in failed. Check the account, password, and Firebase Authentication settings.";
+      errorAlert.textContent = "Sign-in failed. Check the account and password.";
     }
-    showToast("Firebase admin sign-in failed.", "error");
+    showToast("Admin sign-in failed.", "error");
   }
 }
 
@@ -512,8 +512,8 @@ async function handleAdminLogout() {
     showToast("Admin signed out.", "info");
     closeAdminModal();
   } catch (error) {
-    console.error("Firebase admin sign-out failed:", error);
-    showToast("Could not sign out from Firebase.", "error");
+    console.error("Admin sign-out failed:", error);
+    showToast("Could not sign out.", "error");
   }
 }
 
@@ -588,7 +588,7 @@ async function handleAdminDetailsSave(e) {
   CricketAudio.playBatHit();
 
   if (!checkAdminSession(true)) {
-    showToast("Please sign in with the authorized Firebase admin account.", "error");
+    showToast("Please sign in with the authorized admin account.", "error");
     return;
   }
 
@@ -604,11 +604,11 @@ async function handleAdminDetailsSave(e) {
 
   try {
     await firebaseDb.ref("matchData").update(details);
-    showToast("Match details saved to Firebase.", "gold");
+    showToast("Match details saved.", "gold");
     closeAdminModal();
   } catch (error) {
     console.error("Failed to save match details:", error);
-    showToast("Could not save match details to Firebase. Check database rules.", "error");
+    showToast("Could not save match details. Check your connection and access settings.", "error");
   }
 }
 
@@ -658,7 +658,7 @@ async function deletePlayer(id) {
 
 async function updatePlayer(id, updates) {
   if (!checkAdminSession(true)) {
-    showToast("Please sign in with the authorized Firebase admin account.", "error");
+    showToast("Please sign in with the authorized admin account.", "error");
     return;
   }
   try {
@@ -675,7 +675,7 @@ async function updatePlayer(id, updates) {
     showToast(updates ? `Updated ${playerName} to ${updates.status}.` : `Removed "${playerName}" from the roster.`, "info");
   } catch (error) {
     console.error("Failed to update roster:", error);
-    showToast("Could not update roster in Firebase. Check database rules.", "error");
+    showToast("Could not update roster. Check your connection and access settings.", "error");
   }
 }
 
@@ -687,15 +687,15 @@ function nameForPlayer(id) {
 async function confirmResetAllPlayers() {
   if (confirm("⚠️ CLEAR ATTENDANCE:\nKya aap naye Saturday match k liye puri player list reset karna chahte hain?")) {
     if (!checkAdminSession(true)) {
-      showToast("Please sign in with the authorized Firebase admin account.", "error");
+      showToast("Please sign in with the authorized admin account.", "error");
       return;
     }
     try {
       await firebaseDb.ref("matchData/players").set([]);
-      showToast("Player roster cleared in Firebase.", "gold");
+      showToast("Player roster cleared.", "gold");
     } catch (error) {
       console.error("Failed to clear roster:", error);
-      showToast("Could not clear roster in Firebase. Check database rules.", "error");
+      showToast("Could not clear roster. Check your connection and access settings.", "error");
     }
   }
 }
@@ -703,7 +703,7 @@ async function confirmResetAllPlayers() {
 async function handleExpenseSubmit(e) {
   e.preventDefault();
   if (!checkAdminSession() || !firebaseDb) {
-    showToast("Sign in with the authorized Firebase admin account first.", "error");
+    showToast("Sign in with the authorized admin account first.", "error");
     return;
   }
 
@@ -736,16 +736,16 @@ async function handleExpenseSubmit(e) {
     });
     if (!result.committed) throw new Error("Expense was not saved.");
     e.target.reset();
-    showToast("Expense saved to Firebase.", "gold");
+    showToast("Expense saved.", "gold");
   } catch (error) {
     console.error("Failed to save expense:", error);
-    showToast("Could not save expense to Firebase. Check database rules.", "error");
+    showToast("Could not save expense. Check your connection and access settings.", "error");
   }
 }
 
 async function deleteExpense(id) {
   if (!checkAdminSession() || !firebaseDb) {
-    showToast("Sign in with the authorized Firebase admin account first.", "error");
+    showToast("Sign in with the authorized admin account first.", "error");
     return;
   }
   const expense = currentMatchData.expenses.find(record => record.id === id);
@@ -760,10 +760,10 @@ async function deleteExpense(id) {
       return records;
     });
     if (!result.committed) throw new Error("Expense deletion was not committed.");
-    showToast("Expense deleted from Firebase.", "info");
+    showToast("Expense deleted.", "info");
   } catch (error) {
     console.error("Failed to delete expense:", error);
-    showToast("Could not delete expense from Firebase. Check database rules.", "error");
+    showToast("Could not delete expense. Check your connection and access settings.", "error");
   }
 }
 
@@ -859,20 +859,20 @@ function renderFirebaseData(value) {
 
 async function fetchCloudData() {
   if (!firebaseDb) {
-    updateBackendStatusUI("Firebase is not configured.");
+    updateBackendStatusUI("Not connected.");
     return false;
   }
   setSyncStatus(true);
   try {
     const snapshot = await firebaseDb.ref("matchData").once("value");
     renderFirebaseData(snapshot.val());
-    updateBackendStatusUI("Firebase Realtime Database connected.");
+    updateBackendStatusUI("Connected.");
     updateLastSyncTime();
     return true;
   } catch (error) {
     console.error("Failed to fetch match data from Firebase:", error);
-    updateBackendStatusUI("Firebase read failed. Check database rules.");
-    showToast("Could not fetch match data from Firebase.", "error");
+    updateBackendStatusUI("Could not load data. Check access settings.");
+    showToast("Could not fetch match data.", "error");
     return false;
   } finally {
     setSyncStatus(false);
@@ -893,17 +893,17 @@ function initFirebase() {
     firebaseAuth.onAuthStateChanged(() => checkAdminSession());
     firebaseDb.ref("matchData").on("value", snapshot => {
       renderFirebaseData(snapshot.val());
-      updateBackendStatusUI("Firebase Realtime Database connected.");
+      updateBackendStatusUI("Connected.");
       updateLastSyncTime();
     }, error => {
       console.error("Firebase database listener failed:", error);
-      updateBackendStatusUI("Firebase read failed. Check database rules.");
+      updateBackendStatusUI("Could not load data. Check access settings.");
     });
-    updateBackendStatusUI("Connecting to Firebase...");
+    updateBackendStatusUI("Connecting...");
   } catch (err) {
     console.error("Firebase initialization failed:", err);
-    updateBackendStatusUI("Firebase unavailable. Check app configuration.");
-    showToast("Firebase could not start. Check the Firebase configuration.", "error");
+    updateBackendStatusUI("Connection unavailable.");
+    showToast("Could not connect to the data service. Check the app configuration.", "error");
   }
 }
 
@@ -913,7 +913,7 @@ function updateBackendStatusUI(statusText) {
     statusEl.textContent = statusText;
   }
   const dot = document.getElementById("firebaseStatusDot");
-  if (dot) dot.style.background = statusText.includes("connected") ? "#00e676" : "#ff5252";
+  if (dot) dot.style.background = statusText.toLowerCase().includes("connected") ? "#00e676" : "#ff5252";
 }
 
 function setSyncStatus(syncing) {
@@ -931,13 +931,13 @@ function setSyncStatus(syncing) {
 function updateLastSyncTime() {
   const timeEl = document.getElementById("cloudLastSyncTime");
   if (timeEl) {
-    timeEl.textContent = "Last synced: " + new Date().toLocaleTimeString();
+    timeEl.textContent = "Last updated: " + new Date().toLocaleTimeString();
   }
 }
 
 async function forceCloudSync(userTriggered = false) {
   const loaded = await fetchCloudData();
-  if (userTriggered && loaded) showToast("Firebase data refreshed.", "gold");
+  if (userTriggered && loaded) showToast("Data refreshed.", "gold");
 }
 
 // =========================================================

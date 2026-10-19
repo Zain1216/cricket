@@ -84,7 +84,7 @@
           <i class="fa-solid fa-bolt"></i> OFFICIAL MATCH PORTAL
         </div>
         <h1 class="loader-title">SATURDAY INDOOR CRICKET MATCH</h1>
-        <p class="loader-sub">Preparing Pitch, Stumps & Live Squad...</p>
+        <p class="loader-sub">Preparing pitch, stumps & squad...</p>
       </div>
 
       <!-- Loading Bar -->
@@ -110,15 +110,15 @@
         </div>
         <div class="brand-text">
           <span class="brand-title">SAM CRICKET PORTAL</span>
-          <span class="brand-subtitle"><i class="fa-solid fa-circle live-pulse"></i> LIVE MATCH DAY</span>
+          <span class="brand-subtitle"><i class="fa-solid fa-circle live-pulse"></i> MATCH PORTAL</span>
         </div>
       </div>
 
       <div class="header-actions">
-        <!-- Live Cloud Sync Indicator -->
-        <div class="cloud-pill" id="cloudStatusPill" title="Multi-device live sync active">
+        <!-- Update status -->
+        <div class="cloud-pill" id="cloudStatusPill" title="Match updates appear across devices">
           <i class="fa-solid fa-rotate sync-icon"></i>
-          <span class="cloud-text">Live Sync</span>
+          <span class="cloud-text">Sync</span>
         </div>
 
         <!-- Admin Login / Logged In Button -->
@@ -166,7 +166,7 @@
           <!-- Match Day Countdown & Notice -->
           <div class="match-notice-banner" id="displayMatchNotes">
             <i class="fa-solid fa-bullhorn"></i>
-            <span id="notesText">Registration is live! Confirm your availability below before slots are filled.</span>
+            <span id="notesText">Registration is open! Confirm your availability below before slots are filled.</span>
           </div>
         </div>
       </div>
@@ -181,7 +181,7 @@
           <span class="section-sub">MATCH SPECIFICATIONS</span>
           <h3 class="section-title"><i class="fa-solid fa-clipboard-list"></i> MATCH DETAILS</h3>
         </div>
-        <span class="badge-fixed"><i class="fa-solid fa-cloud"></i> Firebase Live</span>
+        <span class="badge-fixed"><i class="fa-solid fa-cloud"></i> Updates</span>
       </div>
 
       <div class="details-grid">
@@ -230,7 +230,7 @@
       <div class="expense-history">
         <div class="expense-history-header">
           <div>
-            <span class="section-sub">LIVE FIREBASE RECORDS</span>
+            <span class="section-sub">EXPENSE HISTORY</span>
             <h4 class="section-title"><i class="fa-solid fa-receipt"></i> MATCH EXPENSES</h4>
           </div>
         </div>
@@ -355,7 +355,7 @@
       <div class="admin-bar-inner">
         <div class="admin-bar-title">
           <i class="fa-solid fa-user-shield"></i>
-          <span>Firebase Admin Session Active</span>
+          <span>Admin Session Active</span>
         </div>
         <div class="admin-bar-actions">
           <button class="btn-admin-action" onclick="openAdminModal()">
@@ -469,8 +469,8 @@
         <div id="adminLoginFormView">
           <div class="admin-login-banner">
             <i class="fa-solid fa-lock login-lock-icon"></i>
-            <h4>Firebase Authentication</h4>
-            <p>Authorized Firebase admin account se sign in karke match details manage karein.</p>
+            <h4>Admin Authentication</h4>
+            <p>Authorized admin account se sign in karke match details manage karein.</p>
           </div>
 
           <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
@@ -484,7 +484,7 @@
                   type="email" 
                   id="adminEmail" 
                   class="form-control" 
-                  placeholder="Firebase admin email"
+                  placeholder="Admin email"
                   required
                 >
               </div>
@@ -515,7 +515,7 @@
             </div>
 
             <button type="submit" class="btn-admin-submit">
-              <i class="fa-solid fa-right-to-bracket"></i> Sign in with Firebase
+              <i class="fa-solid fa-right-to-bracket"></i> Sign in
             </button>
           </form>
         </div>
@@ -530,7 +530,7 @@
             <div>
               <div class="admin-badge-online">Verified Admin</div>
               <h4 class="admin-name">Authorized Admin</h4>
-              <span class="admin-email-text">Signed in with Firebase Authentication</span>
+              <span class="admin-email-text">Signed in as authorized admin</span>
             </div>
           </div>
 
@@ -545,7 +545,7 @@
               <i class="fa-solid fa-receipt"></i> Expenses
             </button>
             <button class="admin-tab-btn" id="btnAdminTabCloud" onclick="switchAdminTab('cloud')">
-              <i class="fa-solid fa-fire"></i> Firebase DB
+              <i class="fa-solid fa-database"></i> Connection
             </button>
           </div>
 
@@ -653,26 +653,26 @@
           <!-- ADMIN TAB 3: FIREBASE & CLOUD SETTINGS -->
           <div id="adminTabCloud" class="admin-tab-content" style="display: none;">
             <div class="cloud-settings-card">
-              <h4><i class="fa-solid fa-fire" style="color:#ff9900"></i> Firebase Realtime Database</h4>
-              <p>Match details aur player availability Firebase se fetch hoti hain aur sab devices par live update hoti hain.</p>
+              <h4><i class="fa-solid fa-database"></i> Data Connection</h4>
+              <p>Match details aur player availability sab devices par automatically update hoti hain.</p>
 
               <div class="cloud-status-box">
                 <div class="cloud-status-indicator">
                   <span class="status-pulse-dot" id="firebaseStatusDot"></span>
-                  <span id="cloudStatusText">Connecting to Firebase...</span>
+                  <span id="cloudStatusText">Connecting...</span>
                 </div>
-                <small id="cloudLastSyncTime">Waiting for Firebase data</small>
+                <small id="cloudLastSyncTime">Waiting for data</small>
               </div>
 
               <div class="cloud-btn-row">
                 <button class="btn-mini btn-secondary" onclick="forceCloudSync(true)">
-                  <i class="fa-solid fa-rotate"></i> Refresh Firebase Data
+                  <i class="fa-solid fa-rotate"></i> Refresh Data
                 </button>
               </div>
 
               <div style="margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--border-light); font-size: 0.78rem; color: var(--text-secondary);">
-                <strong style="color:var(--gold-primary); display:block; margin-bottom:4px;"><i class="fa-solid fa-circle-question"></i> Firebase setup:</strong>
-                Firebase project mein Email/Password Authentication aur Realtime Database enable karein. Authorized admin account Firebase Authentication mein create karein, phir database rules README ke mutabiq set karein.
+                <strong style="color:var(--gold-primary); display:block; margin-bottom:4px;"><i class="fa-solid fa-circle-question"></i> Administrator setup:</strong>
+                Admin login aur database access configure karne ke liye README mein diye gaye setup steps follow karein.
               </div>
 
             </div>
