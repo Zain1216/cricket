@@ -552,9 +552,6 @@
             <button class="admin-tab-btn" id="btnAdminTabExpenses" onclick="switchAdminTab('expenses')">
               <i class="fa-solid fa-receipt"></i> Expenses
             </button>
-            <button class="admin-tab-btn" id="btnAdminTabCloud" onclick="switchAdminTab('cloud')">
-              <i class="fa-solid fa-database"></i> Connection
-            </button>
           </div>
 
           <!-- ADMIN TAB 1: EDIT MATCH DETAILS -->
@@ -615,9 +612,6 @@
                 <textarea id="editMatchNotes" class="form-control" rows="2" placeholder="Instructions for players..."></textarea>
               </div>
 
-              <button type="submit" class="btn-admin-submit" id="saveDetailsBtn">
-                <i class="fa-solid fa-floppy-disk"></i> Save & Sync to All Phones
-              </button>
             </form>
           </div>
 
@@ -644,9 +638,6 @@
                 <label for="editCollectionAmount" class="form-label">TOTAL COLLECTION (Rs.)</label>
                 <input type="number" id="editCollectionAmount" class="form-control" min="0" step="0.01" placeholder="0.00" required>
               </div>
-              <button type="submit" class="btn-admin-submit">
-                <i class="fa-solid fa-floppy-disk"></i> Save Collection
-              </button>
             </form>
             <h4 class="expense-management-title">Add an expense</h4>
             <form id="expenseForm" onsubmit="handleExpenseSubmit(event)">
@@ -665,34 +656,6 @@
             <h4 class="expense-management-title">Recorded expenses</h4>
             <div class="admin-player-list-wrap" id="expenseManagementList">
               <div class="empty-state"><p>No expenses recorded yet.</p></div>
-            </div>
-          </div>
-
-          <!-- ADMIN TAB 3: FIREBASE & CLOUD SETTINGS -->
-          <div id="adminTabCloud" class="admin-tab-content" style="display: none;">
-            <div class="cloud-settings-card">
-              <h4><i class="fa-solid fa-database"></i> Data Connection</h4>
-              <p>Match details aur player availability sab devices par automatically update hoti hain.</p>
-
-              <div class="cloud-status-box">
-                <div class="cloud-status-indicator">
-                  <span class="status-pulse-dot" id="firebaseStatusDot"></span>
-                  <span id="cloudStatusText">Connecting...</span>
-                </div>
-                <small id="cloudLastSyncTime">Waiting for data</small>
-              </div>
-
-              <div class="cloud-btn-row">
-                <button class="btn-mini btn-secondary" onclick="forceCloudSync(true)">
-                  <i class="fa-solid fa-rotate"></i> Refresh Data
-                </button>
-              </div>
-
-              <div style="margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--border-light); font-size: 0.78rem; color: var(--text-secondary);">
-                <strong style="color:var(--gold-primary); display:block; margin-bottom:4px;"><i class="fa-solid fa-circle-question"></i> Administrator setup:</strong>
-                Admin login aur database access configure karne ke liye README mein diye gaye setup steps follow karein.
-              </div>
-
             </div>
           </div>
 

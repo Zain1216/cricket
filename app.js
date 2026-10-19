@@ -28,7 +28,6 @@ const DEFAULT_MATCH_DATA = {
 let currentMatchData = { ...DEFAULT_MATCH_DATA };
 let activeRosterTab = "ON";
 let currentSearchQuery = "";
-let isSyncing = false;
 let firebaseApp = null;
 let firebaseDb = null;
 let firebaseAuth = null;
@@ -102,6 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
   renderExpenses();
   checkAdminSession();
   initFirebase();
+  document.getElementById("adminDetailsForm").addEventListener("change", handleAdminDetailsSave);
+  document.getElementById("financeForm").addEventListener("change", handleFinanceSave);
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && firebaseDb) {
@@ -565,7 +566,7 @@ function togglePasswordVisibility(id) {
 }
 
 function switchAdminTab(tabName) {
-  const tabs = ["details", "players", "expenses", "cloud"];
+  const tabs = ["details", "players", "expenses"];
   tabs.forEach(t => {
     const btn = document.getElementById("btnAdminTab" + capitalize(t));
     const content = document.getElementById("adminTab" + capitalize(t));
@@ -597,7 +598,12 @@ function populateAdminFinanceForm() {
 }
 
 async function handleFinanceSave(e) {
-  e.preventDefault();
+  if (e.type === "submit") e.preventDefault();
+  const form = document.getElementById("financeForm");
+  if (!form.checkValidity()) {
+    if (e.type === "submit") form.reportValidity();
+    return;
+  }
   if (!checkAdminSession() || !firebaseDb) {
     showToast("Sign in with the authorized admin account first.", "error");
     return;
@@ -614,7 +620,7 @@ async function handleFinanceSave(e) {
       collectionAmount,
       lastUpdated: new Date().toISOString()
     });
-    showToast("Collection saved.", "gold");
+    showToast("Collection updated automatically.", "gold");
   } catch (error) {
     console.error("Failed to save collection:", error);
     showToast("Could not save collection. Check your connection and access settings.", "error");
@@ -632,8 +638,12 @@ function populateAdminForm() {
 }
 
 async function handleAdminDetailsSave(e) {
-  e.preventDefault();
-  CricketAudio.playBatHit();
+  if (e.type === "submit") e.preventDefault();
+  const form = document.getElementById("adminDetailsForm");
+  if (!form.checkValidity()) {
+    if (e.type === "submit") form.reportValidity();
+    return;
+  }
 
   if (!checkAdminSession(true)) {
     showToast("Please sign in with the authorized admin account.", "error");
@@ -652,8 +662,7 @@ async function handleAdminDetailsSave(e) {
 
   try {
     await firebaseDb.ref("matchData").update(details);
-    showToast("Match details saved.", "gold");
-    closeAdminModal();
+    showToast("Match details updated automatically.", "gold");
   } catch (error) {
     console.error("Failed to save match details:", error);
     showToast("Could not save match details. Check your connection and access settings.", "error");
@@ -917,23 +926,16 @@ function renderFirebaseData(value) {
 
 async function fetchCloudData() {
   if (!firebaseDb) {
-    updateBackendStatusUI("Not connected.");
     return false;
   }
-  setSyncStatus(true);
   try {
     const snapshot = await firebaseDb.ref("matchData").once("value");
     renderFirebaseData(snapshot.val());
-    updateBackendStatusUI("Connected.");
-    updateLastSyncTime();
     return true;
   } catch (error) {
     console.error("Failed to fetch match data from Firebase:", error);
-    updateBackendStatusUI("Could not load data. Check access settings.");
     showToast("Could not fetch match data.", "error");
     return false;
-  } finally {
-    setSyncStatus(false);
   }
 }
 
@@ -951,51 +953,13 @@ function initFirebase() {
     firebaseAuth.onAuthStateChanged(() => checkAdminSession());
     firebaseDb.ref("matchData").on("value", snapshot => {
       renderFirebaseData(snapshot.val());
-      updateBackendStatusUI("Connected.");
-      updateLastSyncTime();
     }, error => {
       console.error("Firebase database listener failed:", error);
-      updateBackendStatusUI("Could not load data. Check access settings.");
     });
-    updateBackendStatusUI("Connecting...");
   } catch (err) {
     console.error("Firebase initialization failed:", err);
-    updateBackendStatusUI("Connection unavailable.");
     showToast("Could not connect to the data service. Check the app configuration.", "error");
   }
-}
-
-function updateBackendStatusUI(statusText) {
-  const statusEl = document.getElementById("cloudStatusText");
-  if (statusEl) {
-    statusEl.textContent = statusText;
-  }
-  const dot = document.getElementById("firebaseStatusDot");
-  if (dot) dot.style.background = statusText.toLowerCase().includes("connected") ? "#00e676" : "#ff5252";
-}
-
-function setSyncStatus(syncing) {
-  const pill = document.getElementById("cloudStatusPill");
-  const icon = pill ? pill.querySelector(".sync-icon") : null;
-  if (icon) {
-    if (syncing) {
-      icon.classList.add("rotating");
-    } else {
-      icon.classList.remove("rotating");
-    }
-  }
-}
-
-function updateLastSyncTime() {
-  const timeEl = document.getElementById("cloudLastSyncTime");
-  if (timeEl) {
-    timeEl.textContent = "Last updated: " + new Date().toLocaleTimeString();
-  }
-}
-
-async function forceCloudSync(userTriggered = false) {
-  const loaded = await fetchCloudData();
-  if (userTriggered && loaded) showToast("Data refreshed.", "gold");
 }
 
 // =========================================================
