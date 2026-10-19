@@ -175,6 +175,20 @@ function formatCurrency(amount) {
   return `Rs. ${Number(amount || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 }
 
+function getTotalCollection() {
+  const entryFee = String(currentMatchData.entryFee || "").match(/-?\d[\d,]*(?:\.\d+)?/);
+  const amount = entryFee ? Number(entryFee[0].replace(/,/g, "")) : 0;
+  const onPlayers = currentMatchData.players.filter(player => player.status === "ON").length;
+  return Number.isFinite(amount) && amount > 0 ? amount * onPlayers : 0;
+}
+
+function getTotalExpenses() {
+  return currentMatchData.expenses.reduce((total, expense) => {
+    const amount = Number(expense.amount);
+    return total + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+  }, 0);
+}
+
 function renderCounters() {
   const onPlayers = currentMatchData.players.filter(p => p.status === "ON");
   const offPlayers = currentMatchData.players.filter(p => p.status === "OFF");
@@ -769,6 +783,10 @@ async function deleteExpense(id) {
 
 function renderExpenses() {
   const list = document.getElementById("expenseHistoryList");
+  const totalCollection = document.getElementById("totalCollection");
+  const totalExpenses = document.getElementById("totalExpenses");
+  if (totalCollection) totalCollection.textContent = formatCurrency(getTotalCollection());
+  if (totalExpenses) totalExpenses.textContent = formatCurrency(getTotalExpenses());
   if (!list) return;
 
   const expenses = [...currentMatchData.expenses].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));

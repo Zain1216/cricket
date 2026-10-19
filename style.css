@@ -817,6 +817,25 @@ body.loading-active {
   gap: 12px;
 }
 
+.expense-totals {
+  display: flex;
+  gap: 14px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.expense-totals span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.expense-totals strong {
+  color: var(--gold-primary);
+  font-size: 0.95rem;
+}
+
 .expense-history-list {
   display: flex;
   flex-direction: column;
