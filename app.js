@@ -40,6 +40,9 @@ let activeRosterTab = "ON";
 let currentSearchQuery = "";
 let isSyncing = false;
 let cloudSyncTimer = null;
+let firebaseApp = null;
+let firebaseDb = null;
+let isFirebaseConnected = false;
 
 // =========================================================
 // AUDIO SYNTHESIZER (CRICKET BAT HIT & STADIUM SOUND)
@@ -109,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMatchDetails();
   renderCounters();
   checkAdminSession();
+  initFirebase();
   startCloudSync();
 
   // Handle Visibility change (pause/resume sync when screen is turned on/off)
@@ -590,6 +594,15 @@ function populateAdminForm() {
   
   const cloudInput = document.getElementById("customCloudIdInput");
   if (cloudInput) cloudInput.value = APP_CONFIG.cloudRoomId;
+
+  // Populate Firebase inputs
+  if (typeof getActiveFirebaseConfig === 'function') {
+    const fbCfg = getActiveFirebaseConfig();
+    const urlInput = document.getElementById("fbDbUrlInput");
+    const keyInput = document.getElementById("fbApiKeyInput");
+    if (urlInput && fbCfg.databaseURL) urlInput.value = fbCfg.databaseURL;
+    if (keyInput && fbCfg.apiKey) keyInput.value = fbCfg.apiKey;
+  }
 }
 
 function handleAdminDetailsSave(e) {
@@ -706,64 +719,255 @@ function loadDataFromLocalStorage() {
   }
 }
 
+let detectedBackend = "checking";
+
 async function fetchCloudData() {
-  if (!APP_CONFIG.cloudRoomId) return;
   setSyncStatus(true);
 
+  // 1. First try local / Netlify Serverless API (/api/match)
   try {
-    const res = await fetch(`${APP_CONFIG.cloudApiBase}/${APP_CONFIG.cloudRoomId}`);
-    if (res.ok) {
-      const json = await res.json();
-      if (json && json.data) {
-        const cloudData = json.data;
-        // Merge cloud data if it has valid fields
-        if (cloudData.entryFee || cloudData.players) {
-          currentMatchData = {
-            ...currentMatchData,
-            ...cloudData
-          };
-          saveLocalData();
-          renderMatchDetails();
-          renderCounters();
-          if (document.getElementById("viewMoreModal").style.display === "flex") {
-            renderRosterLists();
+    const apiRes = await fetch('/api/match');
+    if (apiRes.ok) {
+      const apiJson = await apiRes.json();
+      if (apiJson && apiJson.success && apiJson.data) {
+        detectedBackend = "api";
+        currentMatchData = { ...currentMatchData, ...apiJson.data };
+        saveLocalData();
+        renderMatchDetails();
+        renderCounters();
+        if (document.getElementById("viewMoreModal").style.display === "flex") {
+          renderRosterLists();
+        }
+        updateBackendStatusUI("Node.js / Netlify API Connected");
+        setSyncStatus(false);
+        return;
+      }
+    }
+  } catch (apiErr) {
+    // /api not available (e.g. static host without serverless functions)
+  }
+
+  // 2. Fallback to Cloud Storage Room
+  if (APP_CONFIG.cloudRoomId) {
+    try {
+      const res = await fetch(`${APP_CONFIG.cloudApiBase}/${APP_CONFIG.cloudRoomId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.data) {
+          detectedBackend = "cloud";
+          const cloudData = json.data;
+          if (cloudData.entryFee || cloudData.players) {
+            currentMatchData = { ...currentMatchData, ...cloudData };
+            saveLocalData();
+            renderMatchDetails();
+            renderCounters();
+            if (document.getElementById("viewMoreModal").style.display === "flex") {
+              renderRosterLists();
+            }
+            updateBackendStatusUI("Live Cloud Sync Connected");
           }
         }
       }
+    } catch (e) {
+      detectedBackend = "local";
+      updateBackendStatusUI("Local Offline Storage Active");
     }
-  } catch (e) {
-    console.log("Cloud sync note: using local cache", e.message);
-  } finally {
-    setSyncStatus(false);
   }
+  setSyncStatus(false);
 }
 
 async function syncToCloud() {
-  if (!APP_CONFIG.cloudRoomId) return;
   setSyncStatus(true);
 
-  try {
+  // 0. Sync to Firebase (Firestore & Realtime Database)
+  if (firebaseApp) {
     const payload = {
-      name: "Sam-Cricket-Portal-Live-Data",
-      data: {
-        ...currentMatchData,
-        lastUpdated: new Date().toISOString()
-      }
+      ...currentMatchData,
+      lastUpdated: new Date().toISOString()
     };
 
-    const res = await fetch(`${APP_CONFIG.cloudApiBase}/${APP_CONFIG.cloudRoomId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      updateLastSyncTime();
+    // Sync to Firestore
+    if (firestoreDb) {
+      try {
+        firestoreDb.collection('matches').doc('saturday').set(payload, { merge: true })
+          .then(() => {
+            isFirebaseConnected = true;
+            updateLastSyncTime();
+          })
+          .catch(e => console.log("Firestore push:", e.message));
+      } catch (e) {}
     }
-  } catch (e) {
-    console.error("Cloud push failed:", e);
-  } finally {
-    setSyncStatus(false);
+
+    // Sync to Realtime DB
+    if (firebaseDb) {
+      try {
+        firebaseDb.ref('matchData').set(payload)
+          .then(() => {
+            isFirebaseConnected = true;
+            updateLastSyncTime();
+          })
+          .catch(e => console.log("RTDB push:", e.message));
+      } catch (e) {}
+    }
+  }
+
+  // 1. If backend is /api, sync to API
+  if (detectedBackend === "api") {
+    try {
+      const res = await fetch('/api/admin/match', {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentMatchData)
+      });
+      if (res.ok) {
+        updateLastSyncTime();
+        setSyncStatus(false);
+        return;
+      }
+    } catch (err) {}
+  }
+
+  // 2. Sync to Cloud Storage Room
+  if (APP_CONFIG.cloudRoomId) {
+    try {
+      const payload = {
+        name: "Sam-Cricket-Portal-Live-Data",
+        data: {
+          ...currentMatchData,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+
+      const res = await fetch(`${APP_CONFIG.cloudApiBase}/${APP_CONFIG.cloudRoomId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        updateLastSyncTime();
+      }
+    } catch (e) {
+      console.error("Cloud push failed:", e);
+    }
+  }
+  setSyncStatus(false);
+}
+
+// =========================================================
+// FIREBASE REALTIME DATABASE & FIRESTORE ENGINE
+// =========================================================
+let firestoreDb = null;
+
+function initFirebase() {
+  try {
+    if (typeof firebase !== 'undefined' && typeof getActiveFirebaseConfig === 'function') {
+      const cfg = getActiveFirebaseConfig();
+      if (!cfg || !cfg.apiKey) return;
+
+      if (!firebase.apps.length) {
+        firebaseApp = firebase.initializeApp(cfg);
+      } else {
+        firebaseApp = firebase.app();
+      }
+
+      // Populate Admin UI Inputs
+      const urlInput = document.getElementById("fbDbUrlInput");
+      const keyInput = document.getElementById("fbApiKeyInput");
+      if (urlInput && cfg.databaseURL) urlInput.value = cfg.databaseURL;
+      if (keyInput && cfg.apiKey) keyInput.value = cfg.apiKey;
+
+      // 1. Listen to Firestore
+      try {
+        if (typeof firebase.firestore === 'function') {
+          firestoreDb = firebase.firestore();
+          firestoreDb.collection('matches').doc('saturday').onSnapshot((doc) => {
+            if (doc.exists) {
+              const val = doc.data();
+              if (val && (val.entryFee || val.players)) {
+                isFirebaseConnected = true;
+                detectedBackend = "firebase";
+                currentMatchData = { ...currentMatchData, ...val };
+                saveLocalData();
+                renderMatchDetails();
+                renderCounters();
+                if (document.getElementById("viewMoreModal").style.display === "flex") {
+                  renderRosterLists();
+                }
+                updateBackendStatusUI("Firebase Database Connected (Live 0ms)");
+                updateLastSyncTime();
+                const dot = document.getElementById("firebaseStatusDot");
+                if (dot) dot.style.background = "#00e676";
+              }
+            }
+          }, (err) => {
+            console.log("Firestore listener note:", err.message);
+          });
+        }
+      } catch (fsErr) {
+        console.log("Firestore init note:", fsErr);
+      }
+
+      // 2. Listen to Realtime Database
+      try {
+        if (typeof firebase.database === 'function' && cfg.databaseURL) {
+          firebaseDb = firebase.database();
+          firebaseDb.ref('matchData').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val && (val.entryFee || val.players)) {
+              isFirebaseConnected = true;
+              detectedBackend = "firebase";
+              currentMatchData = { ...currentMatchData, ...val };
+              saveLocalData();
+              renderMatchDetails();
+              renderCounters();
+              if (document.getElementById("viewMoreModal").style.display === "flex") {
+                renderRosterLists();
+              }
+              updateBackendStatusUI("Firebase Realtime DB Connected (Live 0ms)");
+              updateLastSyncTime();
+              const dot = document.getElementById("firebaseStatusDot");
+              if (dot) dot.style.background = "#00e676";
+            }
+          }, (err) => {
+            console.log("RTDB listener note:", err.message);
+          });
+        }
+      } catch (rtdbErr) {
+        console.log("RTDB init note:", rtdbErr);
+      }
+    }
+  } catch (err) {
+    console.warn("Firebase general note:", err);
+  }
+}
+
+function saveFirebaseSettingsFromUI() {
+  const urlInput = document.getElementById("fbDbUrlInput");
+  const keyInput = document.getElementById("fbApiKeyInput");
+  const dbUrl = urlInput ? urlInput.value.trim() : "";
+  const apiKey = keyInput ? keyInput.value.trim() : "";
+
+  const currentCfg = typeof getActiveFirebaseConfig === 'function' ? getActiveFirebaseConfig() : {};
+  const updated = {
+    ...currentCfg,
+    apiKey: apiKey || currentCfg.apiKey,
+    databaseURL: dbUrl || currentCfg.databaseURL
+  };
+
+  if (typeof saveActiveFirebaseConfig === 'function') {
+    saveActiveFirebaseConfig(updated);
+  }
+
+  showToast("Firebase Settings Saved! Connecting...", "gold");
+  initFirebase();
+  setTimeout(() => syncToCloud(), 500);
+}
+
+function updateBackendStatusUI(statusText) {
+  const statusEl = document.getElementById("cloudStatusText");
+  if (statusEl) {
+    statusEl.textContent = "Backend: " + statusText;
   }
 }
 

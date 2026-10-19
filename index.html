@@ -543,7 +543,7 @@
               <i class="fa-solid fa-users-gear"></i> Manage Players
             </button>
             <button class="admin-tab-btn" id="btnAdminTabCloud" onclick="switchAdminTab('cloud')">
-              <i class="fa-solid fa-cloud-arrow-up"></i> Live Cloud
+              <i class="fa-solid fa-fire"></i> Firebase DB
             </button>
           </div>
 
@@ -637,34 +637,57 @@
             </div>
           </div>
 
-          <!-- ADMIN TAB 3: CLOUD SYNC SETTINGS -->
+          <!-- ADMIN TAB 3: FIREBASE & CLOUD SETTINGS -->
           <div id="adminTabCloud" class="admin-tab-content" style="display: none;">
             <div class="cloud-settings-card">
-              <h4><i class="fa-solid fa-cloud"></i> Multi-Phone Realtime Sync</h4>
-              <p>Jab bhi koi player apne phone se submit karega ya admin phone se details change karega, to sabhi phones par live update show hoga.</p>
+              <h4><i class="fa-solid fa-fire" style="color:#ff9900"></i> Firebase Realtime Database</h4>
+              <p>Google Firebase database se sabhi khilariyon ke mobile phone par <strong>0-second live updates</strong> aate hain jaise hi koi submit kare!</p>
 
               <div class="cloud-status-box">
                 <div class="cloud-status-indicator">
-                  <span class="status-pulse-dot"></span>
-                  <span id="cloudStatusText">Cloud Sync: Active & Connected</span>
+                  <span class="status-pulse-dot" id="firebaseStatusDot"></span>
+                  <span id="cloudStatusText">Firebase DB: Ready & Connected</span>
                 </div>
                 <small id="cloudLastSyncTime">Last updated: Just now</small>
               </div>
 
+              <!-- Firebase Database URL Input -->
               <div class="form-group" style="margin-top: 15px;">
-                <label class="form-label">CLOUD STORAGE ID</label>
-                <input type="text" id="customCloudIdInput" class="form-control" readonly>
-                <span class="input-hint">Default shared cloud storage for this cricket portal.</span>
+                <label class="form-label"><i class="fa-solid fa-link"></i> FIREBASE DATABASE URL</label>
+                <div class="input-wrap">
+                  <input type="url" id="fbDbUrlInput" class="form-control" placeholder="https://sam-cricket-portal-default-rtdb.firebaseio.com">
+                </div>
+                <span class="input-hint">Aapka Firebase Realtime Database link (console.firebase.google.com se)</span>
               </div>
 
+              <!-- Firebase API Key Input -->
+              <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-key"></i> FIREBASE API KEY (OPTIONAL)</label>
+                <div class="input-wrap">
+                  <input type="text" id="fbApiKeyInput" class="form-control" placeholder="AIzaSy...">
+                </div>
+              </div>
+
+              <!-- Save Firebase Config Button -->
               <div class="cloud-btn-row">
-                <button class="btn-mini btn-secondary" onclick="forceCloudSync(true)">
-                  <i class="fa-solid fa-rotate"></i> Sync Cloud Now
+                <button class="btn-mini btn-primary" onclick="saveFirebaseSettingsFromUI()">
+                  <i class="fa-solid fa-floppy-disk"></i> Save & Connect Firebase
                 </button>
-                <button class="btn-mini btn-primary" onclick="createNewCloudRoom()">
-                  <i class="fa-solid fa-plus"></i> Create New Cloud Room
+                <button class="btn-mini btn-secondary" onclick="forceCloudSync(true)">
+                  <i class="fa-solid fa-rotate"></i> Test Live Sync
                 </button>
               </div>
+
+              <!-- Step-by-Step Mini Guide -->
+              <div style="margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--border-light); font-size: 0.78rem; color: var(--text-secondary);">
+                <strong style="color:var(--gold-primary); display:block; margin-bottom:4px;"><i class="fa-solid fa-circle-question"></i> Firebase Kaise Banayein (1 Minute Guide):</strong>
+                1. <a href="https://console.firebase.google.com" target="_blank" style="color:var(--turf-green)">console.firebase.google.com</a> par <code>sameerarif133@gmail.com</code> se login karein.<br>
+                2. <strong>Create project</strong> par click karein aur naam <code>sam-cricket-portal</code> rakhein.<br>
+                3. Left menu se <strong>Build > Realtime Database</strong> par click karein aur <strong>Create Database</strong> karein.<br>
+                4. Rules mein <strong>Start in test mode</strong> (read: true, write: true) select karein.<br>
+                5. Database URL copy karke upar box mein paste karein aur Save dabayein!
+              </div>
+
             </div>
           </div>
 
@@ -698,7 +721,13 @@
     </div>
   </footer>
 
-  <!-- Main JavaScript Application -->
+  <!-- Firebase SDKs (Compat Mode for Maximum Compatibility) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
+  <!-- Firebase Config & App Scripts -->
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

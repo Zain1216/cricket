@@ -44,10 +44,37 @@ Ek complete aur modern Cricket Match Portal jisme live squad attendance, admin c
      - Kisi bhi player ko delete ya ON/OFF switch kar sakta hai
      - Naye Saturday match ke liye list reset kar sakta hai.
 
-7. **☁️ Multi-Device Live Cloud Sync:**
+7. **☁️ Multi-Device Live Cloud Sync & Backend:**
    - Ek phone se submit ya change hone par doosre sabhi phones par live data sync ho jata hai.
+   - **Node.js Express Server** (`server.js`) with persistent JSON database (`data/match-data.json`).
+   - **Netlify Serverless Function** (`netlify/functions/api.js`) for Netlify deployment.
 
 ---
+
+## ⚙️ Backend Architecture (Backend Kaise Kaam Karta Hai?)
+
+Website mein **3-Layer Backend System** tayyar kiya gaya hai:
+
+### 1. Node.js Express REST API Server (`server.js`)
+Agar aap apne computer ya kisi VPS/Render par chalana chahein:
+* Command: `npm start` ya `node server.js`
+* Server URL: `http://localhost:3000`
+* Database: `data/match-data.json` (Tamam players aur match details file mein permanently save hoti hain).
+* **API Endpoints:**
+  * `GET  /api/match` - Match details aur player roster fetch karne ke liye.
+  * `POST /api/rsvp` - Player name aur ON/OFF status submit karne ke liye.
+  * `POST /api/admin/login` - Admin login verification.
+  * `PUT  /api/admin/match` - Entry fee, time, location, saving update karne ke liye.
+  * `DELETE /api/admin/players/:id` - Admin player delete karne ke liye.
+  * `POST /api/admin/reset` - Naye match k liye roster clear karne ke liye.
+
+### 2. Netlify Serverless Functions (`netlify/functions/api.js`)
+* Jab aap Netlify par folder deploy karte hain, to Netlify ka built-in serverless backend automatically active ho jata hai.
+* `netlify.toml` file automatically `/api/*` requests ko Netlify function par route karti hai.
+
+### 3. Live Multi-Device Cloud Sync
+* Netlify par alag alag mobile phones se khilari link open karenge to sabhi phones par real-time sync chalega bina kisi server setup ke!
+
 
 ## 🚀 Netlify Par Host Karne Ka Tareeqa (Link: `sam-cricket-potal`)
 
