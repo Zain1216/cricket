@@ -5,43 +5,7 @@
   "savingAmount": "Rs. 2,000",
   "locationName": "Indoor Cricket Arena (Karachi)",
   "locationMapUrl": "https://maps.google.com/?q=Indoor+Cricket+Arena",
-  "matchNotes": "Tournament match day! Arrive 15 minutes before time in white kits.",
-  "lastUpdated": "2026-10-19T20:12:45.152Z",
-  "players": [
-    {
-      "id": "p_1792440765152_403",
-      "name": "Zain Abbas",
-      "status": "ON",
-      "timeStr": "01:12 AM",
-      "timestamp": 1792440765152
-    },
-    {
-      "id": "p1",
-      "name": "Sameer Arif (C)",
-      "status": "ON",
-      "timeStr": "08:30 PM",
-      "timestamp": 1792437000000
-    },
-    {
-      "id": "p2",
-      "name": "Hamza Khan",
-      "status": "ON",
-      "timeStr": "08:35 PM",
-      "timestamp": 1792437300000
-    },
-    {
-      "id": "p3",
-      "name": "Bilal Ahmed",
-      "status": "ON",
-      "timeStr": "08:42 PM",
-      "timestamp": 1792437700000
-    },
-    {
-      "id": "p4",
-      "name": "Usman Ali",
-      "status": "OFF",
-      "timeStr": "08:50 PM",
-      "timestamp": 1792438200000
-    }
-  ]
+  "matchNotes": "Registration is live! Confirm your availability below before slots are filled.",
+  "lastUpdated": "2026-10-20T00:00:00.000Z",
+  "players": []
 }
