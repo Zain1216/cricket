@@ -192,7 +192,7 @@
           </div>
           <div class="detail-info">
             <span class="detail-label">ENTRY FEE</span>
-            <div class="detail-value" id="displayEntryFee">Rs. 500</div>
+            <div class="detail-value" id="displayEntryFee">Not set</div>
             <span class="detail-sub">Per Player / Head</span>
           </div>
           <div class="detail-badge-pill">Fixed</div>
@@ -205,23 +205,23 @@
           </div>
           <div class="detail-info">
             <span class="detail-label">TIME</span>
-            <div class="detail-value" id="displayMatchTime">Saturday 09:00 PM - 12:00 AM</div>
+            <div class="detail-value" id="displayMatchTime">Not set</div>
             <span class="detail-sub">Report 15 mins prior</span>
           </div>
           <div class="detail-badge-pill">Fixed</div>
         </div>
 
-        <!-- 3. SAVING (Fixed - Admin Editable) -->
-        <div class="detail-card saving-card">
+        <!-- 3. LIVE REMAINING BALANCE -->
+        <div class="detail-card balance-card">
           <div class="detail-icon-wrap">
-            <i class="fa-solid fa-piggy-bank"></i>
+            <i class="fa-solid fa-wallet"></i>
           </div>
           <div class="detail-info">
-            <span class="detail-label">SAVING / POOL</span>
-            <div class="detail-value" id="displaySaving">Rs. 2,000</div>
-            <span class="detail-sub">Reserved Match Savings</span>
+            <span class="detail-label">REMAINING BALANCE</span>
+            <div class="detail-value" id="displayRemainingBalance">Rs. 0</div>
+            <span class="detail-sub">Entry fee × ON players − expenses</span>
           </div>
-          <div class="detail-badge-pill">Fixed</div>
+          <div class="detail-badge-pill">Live</div>
         </div>
 
         <!-- 4. LOCATION AS GOOGLE MAP LINK (Fixed - Admin Editable) -->
@@ -231,12 +231,28 @@
           </div>
           <div class="detail-info">
             <span class="detail-label">LOCATION</span>
-            <div class="detail-value location-text" id="displayLocationName">Indoor Cricket Arena</div>
-            <a href="https://maps.google.com/?q=Indoor+Cricket+Arena" target="_blank" rel="noopener noreferrer" class="map-link-btn" id="displayLocationLink">
+            <div class="detail-value location-text" id="displayLocationName">Not set</div>
+            <a href="#" target="_blank" rel="noopener noreferrer" class="map-link-btn" id="displayLocationLink">
               <i class="fa-solid fa-diamond-turn-right"></i> Open in Google Maps
             </a>
           </div>
           <div class="detail-badge-pill">Fixed</div>
+        </div>
+      </div>
+
+      <div class="expense-history">
+        <div class="expense-history-header">
+          <div>
+            <span class="section-sub">LIVE FINANCIAL SUMMARY</span>
+            <h4 class="section-title"><i class="fa-solid fa-receipt"></i> MATCH EXPENSES</h4>
+          </div>
+          <div class="expense-totals">
+            <span>Collected <strong id="totalCollected">Rs. 0</strong></span>
+            <span>Expenses <strong id="totalExpenses">Rs. 0</strong></span>
+          </div>
+        </div>
+        <div class="expense-history-list" id="expenseHistoryList">
+          <div class="empty-state"><p>No expenses recorded yet.</p></div>
         </div>
       </div>
     </section>
@@ -356,7 +372,7 @@
       <div class="admin-bar-inner">
         <div class="admin-bar-title">
           <i class="fa-solid fa-user-shield"></i>
-          <span>Admin Session Active (Sameer Arif)</span>
+          <span>Firebase Admin Session Active</span>
         </div>
         <div class="admin-bar-actions">
           <button class="btn-admin-action" onclick="openAdminModal()">
@@ -470,8 +486,8 @@
         <div id="adminLoginFormView">
           <div class="admin-login-banner">
             <i class="fa-solid fa-lock login-lock-icon"></i>
-            <h4>Admin Authentication</h4>
-            <p>Sirf authorized admin match ki details phone se change kar sakta hai.</p>
+            <h4>Firebase Authentication</h4>
+            <p>Authorized Firebase admin account se sign in karke match details manage karein.</p>
           </div>
 
           <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
@@ -485,7 +501,7 @@
                   type="email" 
                   id="adminEmail" 
                   class="form-control" 
-                  placeholder="sameerarif133@gmail.com" 
+                  placeholder="Firebase admin email"
                   required
                 >
               </div>
@@ -516,7 +532,7 @@
             </div>
 
             <button type="submit" class="btn-admin-submit">
-              <i class="fa-solid fa-right-to-bracket"></i> Login As Admin
+              <i class="fa-solid fa-right-to-bracket"></i> Sign in with Firebase
             </button>
           </form>
         </div>
@@ -530,8 +546,8 @@
             </div>
             <div>
               <div class="admin-badge-online">Verified Admin</div>
-              <h4 class="admin-name">Sameer Arif</h4>
-              <span class="admin-email-text">sameerarif133@gmail.com</span>
+              <h4 class="admin-name">Authorized Admin</h4>
+              <span class="admin-email-text">Signed in with Firebase Authentication</span>
             </div>
           </div>
 
@@ -541,6 +557,9 @@
             </button>
             <button class="admin-tab-btn" id="btnAdminTabPlayers" onclick="switchAdminTab('players')">
               <i class="fa-solid fa-users-gear"></i> Manage Players
+            </button>
+            <button class="admin-tab-btn" id="btnAdminTabExpenses" onclick="switchAdminTab('expenses')">
+              <i class="fa-solid fa-receipt"></i> Expenses
             </button>
             <button class="admin-tab-btn" id="btnAdminTabCloud" onclick="switchAdminTab('cloud')">
               <i class="fa-solid fa-fire"></i> Firebase DB
@@ -574,16 +593,6 @@
                 </label>
                 <div class="input-wrap">
                   <input type="text" id="editMatchTime" class="form-control" placeholder="e.g. Saturday 09:00 PM - 12:00 AM" required>
-                </div>
-              </div>
-
-              <!-- Saving -->
-              <div class="form-group">
-                <label for="editSaving" class="form-label">
-                  <i class="fa-solid fa-piggy-bank"></i> SAVING / POOL
-                </label>
-                <div class="input-wrap">
-                  <input type="text" id="editSaving" class="form-control" placeholder="e.g. Rs. 2,000" required>
                 </div>
               </div>
 
@@ -637,55 +646,55 @@
             </div>
           </div>
 
+          <!-- ADMIN TAB: EXPENSES -->
+          <div id="adminTabExpenses" class="admin-tab-content" style="display: none;">
+            <div class="expense-admin-summary">
+              <div><span>Total collected</span><strong id="adminTotalCollected">Rs. 0</strong></div>
+              <div><span>Total expenses</span><strong id="adminTotalExpenses">Rs. 0</strong></div>
+              <div><span>Remaining balance</span><strong id="adminRemainingBalance">Rs. 0</strong></div>
+            </div>
+            <form id="expenseForm" onsubmit="handleExpenseSubmit(event)">
+              <div class="form-group">
+                <label for="expenseDescription" class="form-label">EXPENSE DESCRIPTION</label>
+                <input type="text" id="expenseDescription" class="form-control" maxlength="80" placeholder="e.g. Ground booking" required>
+              </div>
+              <div class="form-group">
+                <label for="expenseAmount" class="form-label">AMOUNT (Rs.)</label>
+                <input type="number" id="expenseAmount" class="form-control" min="0.01" step="0.01" placeholder="0.00" required>
+              </div>
+              <button type="submit" class="btn-admin-submit">
+                <i class="fa-solid fa-plus"></i> Add Expense
+              </button>
+            </form>
+            <h4 class="expense-management-title">Recorded expenses</h4>
+            <div class="admin-player-list-wrap" id="expenseManagementList">
+              <div class="empty-state"><p>No expenses recorded yet.</p></div>
+            </div>
+          </div>
+
           <!-- ADMIN TAB 3: FIREBASE & CLOUD SETTINGS -->
           <div id="adminTabCloud" class="admin-tab-content" style="display: none;">
             <div class="cloud-settings-card">
               <h4><i class="fa-solid fa-fire" style="color:#ff9900"></i> Firebase Realtime Database</h4>
-              <p>Google Firebase database se sabhi khilariyon ke mobile phone par <strong>0-second live updates</strong> aate hain jaise hi koi submit kare!</p>
+              <p>Match details aur player availability Firebase se fetch hoti hain aur sab devices par live update hoti hain.</p>
 
               <div class="cloud-status-box">
                 <div class="cloud-status-indicator">
                   <span class="status-pulse-dot" id="firebaseStatusDot"></span>
-                  <span id="cloudStatusText">Firebase DB: Ready & Connected</span>
+                  <span id="cloudStatusText">Connecting to Firebase...</span>
                 </div>
-                <small id="cloudLastSyncTime">Last updated: Just now</small>
+                <small id="cloudLastSyncTime">Waiting for Firebase data</small>
               </div>
 
-              <!-- Firebase Database URL Input -->
-              <div class="form-group" style="margin-top: 15px;">
-                <label class="form-label"><i class="fa-solid fa-link"></i> FIREBASE DATABASE URL</label>
-                <div class="input-wrap">
-                  <input type="url" id="fbDbUrlInput" class="form-control" placeholder="https://sam-cricket-portal-default-rtdb.firebaseio.com">
-                </div>
-                <span class="input-hint">Aapka Firebase Realtime Database link (console.firebase.google.com se)</span>
-              </div>
-
-              <!-- Firebase API Key Input -->
-              <div class="form-group">
-                <label class="form-label"><i class="fa-solid fa-key"></i> FIREBASE API KEY (OPTIONAL)</label>
-                <div class="input-wrap">
-                  <input type="text" id="fbApiKeyInput" class="form-control" placeholder="AIzaSy...">
-                </div>
-              </div>
-
-              <!-- Save Firebase Config Button -->
               <div class="cloud-btn-row">
-                <button class="btn-mini btn-primary" onclick="saveFirebaseSettingsFromUI()">
-                  <i class="fa-solid fa-floppy-disk"></i> Save & Connect Firebase
-                </button>
                 <button class="btn-mini btn-secondary" onclick="forceCloudSync(true)">
-                  <i class="fa-solid fa-rotate"></i> Test Live Sync
+                  <i class="fa-solid fa-rotate"></i> Refresh Firebase Data
                 </button>
               </div>
 
-              <!-- Step-by-Step Mini Guide -->
               <div style="margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--border-light); font-size: 0.78rem; color: var(--text-secondary);">
-                <strong style="color:var(--gold-primary); display:block; margin-bottom:4px;"><i class="fa-solid fa-circle-question"></i> Firebase Kaise Banayein (1 Minute Guide):</strong>
-                1. <a href="https://console.firebase.google.com" target="_blank" style="color:var(--turf-green)">console.firebase.google.com</a> par <code>sameerarif133@gmail.com</code> se login karein.<br>
-                2. <strong>Create project</strong> par click karein aur naam <code>sam-cricket-portal</code> rakhein.<br>
-                3. Left menu se <strong>Build > Realtime Database</strong> par click karein aur <strong>Create Database</strong> karein.<br>
-                4. Rules mein <strong>Start in test mode</strong> (read: true, write: true) select karein.<br>
-                5. Database URL copy karke upar box mein paste karein aur Save dabayein!
+                <strong style="color:var(--gold-primary); display:block; margin-bottom:4px;"><i class="fa-solid fa-circle-question"></i> Firebase setup:</strong>
+                Firebase project mein Email/Password Authentication aur Realtime Database enable karein. Authorized admin account Firebase Authentication mein create karein, phir database rules README ke mutabiq set karein.
               </div>
 
             </div>
@@ -714,7 +723,7 @@
         <i class="fa-solid fa-baseball-bat-ball"></i>
         <span>SATURDAY INDOOR CRICKET</span>
       </div>
-      <p class="footer-copy">Crafted for Saturday Cricket Warriors &bull; Organized by Sameer Arif</p>
+      <p class="footer-copy">Crafted for Saturday Cricket Warriors</p>
       <div class="footer-portal-name">
         <i class="fa-solid fa-globe"></i> Netlify Link: <code>sam-cricket-potal.netlify.app</code>
       </div>
@@ -723,8 +732,8 @@
 
   <!-- Firebase SDKs (Compat Mode for Maximum Compatibility) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   
   <!-- Firebase Config & App Scripts -->
   <script src="firebase-config.js"></script>

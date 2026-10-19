@@ -1,7 +1,7 @@
 {
   "name": "sam-cricket-portal",
   "version": "1.0.0",
-  "description": "Backend API & Server for Saturday Indoor Cricket Match Portal",
+  "description": "Saturday Indoor Cricket Match Portal with Firebase Authentication and Realtime Database",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,8 +17,6 @@
   "author": "Sameer Arif",
   "license": "MIT",
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "firebase": "^13.0.0"
+    "express": "^4.21.2"
   }
 }

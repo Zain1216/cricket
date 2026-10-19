@@ -2,47 +2,35 @@
  * =========================================================
  * SATURDAY INDOOR CRICKET MATCH - SAM CRICKET PORTAL
  * Client Application Logic & Cloud Synchronization
- * Admin: sameerarif133@gmail.com | Password: Sameer123
+ * Admin access is verified by Firebase Authentication.
  * =========================================================
  */
 
 // Global App State
 const APP_CONFIG = {
-  adminEmail: "sameerarif133@gmail.com",
-  adminPass: "Sameer123",
-  cloudApiBase: "https://api.restful-api.dev/objects",
-  cloudRoomId: "ff808181a09d98f701a155ad79822228",
-  localStorageKey: "sam_cricket_match_data_v2",
-  adminSessionKey: "sam_cricket_admin_session_v2",
-  pollIntervalMs: 5000 // 5 seconds live sync for multi-phone viewing
+  adminEmail: FIREBASE_ADMIN_EMAIL
 };
 
-// Default State (in case offline or first load)
+// Empty until the Firebase Realtime Database returns the saved match.
 const DEFAULT_MATCH_DATA = {
-  matchTitle: "SATURDAY INDOOR CRICKET MATCH",
-  entryFee: "Rs. 500",
-  matchTime: "Saturday 09:00 PM - 12:00 AM",
-  savingAmount: "Rs. 2,000",
-  locationName: "Indoor Cricket Arena (Karachi)",
-  locationMapUrl: "https://maps.google.com/?q=Indoor+Cricket+Arena",
-  matchNotes: "Tournament match day! Arrive 15 minutes before time in white kits.",
+  matchTitle: "",
+  entryFee: "",
+  matchTime: "",
+  locationName: "",
+  locationMapUrl: "",
+  matchNotes: "",
   lastUpdated: new Date().toISOString(),
-  players: [
-    { id: "p1", name: "Sameer Arif (C)", status: "ON", timeStr: "08:30 PM", timestamp: Date.now() - 3600000 },
-    { id: "p2", name: "Hamza Khan", status: "ON", timeStr: "08:35 PM", timestamp: Date.now() - 3200000 },
-    { id: "p3", name: "Bilal Ahmed", status: "ON", timeStr: "08:42 PM", timestamp: Date.now() - 2800000 },
-    { id: "p4", name: "Usman Ali", status: "OFF", timeStr: "08:50 PM", timestamp: Date.now() - 2400000 }
-  ]
+  players: [],
+  expenses: []
 };
 
 let currentMatchData = { ...DEFAULT_MATCH_DATA };
 let activeRosterTab = "ON";
 let currentSearchQuery = "";
 let isSyncing = false;
-let cloudSyncTimer = null;
 let firebaseApp = null;
 let firebaseDb = null;
-let isFirebaseConnected = false;
+let firebaseAuth = null;
 
 // =========================================================
 // AUDIO SYNTHESIZER (CRICKET BAT HIT & STADIUM SOUND)
@@ -108,16 +96,14 @@ const CricketAudio = {
 // =========================================================
 document.addEventListener("DOMContentLoaded", () => {
   initLoader();
-  loadDataFromLocalStorage();
   renderMatchDetails();
   renderCounters();
+  renderExpenses();
   checkAdminSession();
   initFirebase();
-  startCloudSync();
 
-  // Handle Visibility change (pause/resume sync when screen is turned on/off)
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
+    if (!document.hidden && firebaseDb) {
       fetchCloudData();
     }
   });
@@ -169,24 +155,47 @@ function renderMatchDetails() {
   const titleEl = document.getElementById("displayMatchTitle");
   const feeEl = document.getElementById("displayEntryFee");
   const timeEl = document.getElementById("displayMatchTime");
-  const savingEl = document.getElementById("displaySaving");
+  const balanceEl = document.getElementById("displayRemainingBalance");
   const locNameEl = document.getElementById("displayLocationName");
   const locLinkEl = document.getElementById("displayLocationLink");
   const notesText = document.getElementById("notesText");
 
-  if (titleEl) titleEl.textContent = currentMatchData.matchTitle || "SATURDAY INDOOR CRICKET MATCH";
-  if (feeEl) feeEl.textContent = currentMatchData.entryFee || "Rs. 500";
-  if (timeEl) timeEl.textContent = currentMatchData.matchTime || "Saturday 09:00 PM - 12:00 AM";
-  if (savingEl) savingEl.textContent = currentMatchData.savingAmount || "Rs. 2,000";
-  if (locNameEl) locNameEl.textContent = currentMatchData.locationName || "Indoor Cricket Arena";
+  if (titleEl) titleEl.textContent = currentMatchData.matchTitle || "MATCH DETAILS NOT SET";
+  if (feeEl) feeEl.textContent = currentMatchData.entryFee || "Not set";
+  if (timeEl) timeEl.textContent = currentMatchData.matchTime || "Not set";
+  if (balanceEl) balanceEl.textContent = formatCurrency(getRemainingBalance());
+  if (locNameEl) locNameEl.textContent = currentMatchData.locationName || "Not set";
   
   if (locLinkEl) {
-    locLinkEl.href = currentMatchData.locationMapUrl || "https://maps.google.com/?q=Indoor+Cricket+Arena";
+    locLinkEl.href = currentMatchData.locationMapUrl || "#";
   }
 
-  if (notesText && currentMatchData.matchNotes) {
-    notesText.textContent = currentMatchData.matchNotes;
-  }
+  if (notesText) notesText.textContent = currentMatchData.matchNotes || "Match information will appear here.";
+}
+
+function parseCurrencyAmount(value) {
+  const parsed = Number(String(value || "").replace(/,/g, "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function formatCurrency(amount) {
+  return `Rs. ${Number(amount || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+}
+
+function getTotalCollected() {
+  const availablePlayers = currentMatchData.players.filter(player => player.status === "ON").length;
+  return availablePlayers * parseCurrencyAmount(currentMatchData.entryFee);
+}
+
+function getTotalExpenses() {
+  return currentMatchData.expenses.reduce((total, expense) => {
+    const amount = Number(expense.amount);
+    return total + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+  }, 0);
+}
+
+function getRemainingBalance() {
+  return getTotalCollected() - getTotalExpenses();
 }
 
 function renderCounters() {
@@ -212,14 +221,20 @@ function renderCounters() {
   if (viewMoreBtn) {
     viewMoreBtn.innerHTML = `<span>VIEW MORE (${onPlayers.length} ON &bull; ${offPlayers.length} OFF)</span> <i class="fa-solid fa-chevron-right"></i>`;
   }
+  renderMatchDetails();
 }
 
 // =========================================================
 // PLAYER AVAILABILITY (RSVP) SUBMISSION
 // =========================================================
-function handleRsvpSubmit(e) {
+async function handleRsvpSubmit(e) {
   e.preventDefault();
   CricketAudio.playBatHit();
+
+  if (!firebaseDb) {
+    showToast("Firebase is not connected. Availability was not saved.", "error");
+    return;
+  }
 
   const nameInput = document.getElementById("playerName");
   const name = nameInput.value.trim();
@@ -231,31 +246,39 @@ function handleRsvpSubmit(e) {
   const statusRadio = document.querySelector('input[name="playerStatus"]:checked');
   const status = statusRadio ? statusRadio.value : "ON";
 
-  // Check if player name already exists in list
-  const existingIndex = currentMatchData.players.findIndex(
-    p => p.name.trim().toLowerCase() === name.toLowerCase()
-  );
-
   const now = new Date();
   const timeFormatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const player = {
+    id: firebaseDb.ref("matchData/players").push().key,
+    name,
+    status,
+    timeStr: timeFormatted,
+    timestamp: Date.now()
+  };
 
-  if (existingIndex !== -1) {
-    // Update existing player status
-    currentMatchData.players[existingIndex].status = status;
-    currentMatchData.players[existingIndex].timeStr = timeFormatted;
-    currentMatchData.players[existingIndex].timestamp = Date.now();
-    showToast(`✅ Status updated for "${name}" to ${status}!`, status === "ON" ? "gold" : "info");
-  } else {
-    // Add new player to roster
-    const newPlayer = {
-      id: "p_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
-      name: name,
-      status: status,
-      timeStr: timeFormatted,
-      timestamp: Date.now()
-    };
-    currentMatchData.players.unshift(newPlayer);
-    showToast(`🎉 "${name}" added to match roster as ${status}!`, status === "ON" ? "gold" : "info");
+  if (!player.id) {
+    showToast("Could not create a player record. Please try again.", "error");
+    return;
+  }
+
+  try {
+    const playersRef = firebaseDb.ref("matchData/players");
+    const result = await playersRef.transaction(players => {
+      const roster = normalizePlayers(players);
+      const existing = roster.findIndex(p => p.name.trim().toLowerCase() === name.toLowerCase());
+      if (existing >= 0) {
+        roster[existing] = { ...roster[existing], status, timeStr: timeFormatted, timestamp: Date.now() };
+      } else {
+        roster.unshift(player);
+      }
+      return playerMap(roster);
+    });
+    if (!result.committed) throw new Error("The roster update was not committed.");
+    showToast(`"${name}" availability saved as ${status}.`, status === "ON" ? "gold" : "info");
+  } catch (error) {
+    console.error("Failed to save player availability:", error);
+    showToast("Could not save availability to Firebase. Check your connection and database rules.", "error");
+    return;
   }
 
   // Trigger celebration confetti for "ON" players!
@@ -269,15 +292,7 @@ function handleRsvpSubmit(e) {
     });
   }
 
-  // Clear name input for next player
   nameInput.value = "";
-
-  // Save changes locally and sync to cloud for all phones
-  saveLocalData();
-  renderCounters();
-  syncToCloud();
-
-  // Animate the VIEW MORE button to encourage clicking
   highlightViewMoreButton();
 }
 
@@ -420,7 +435,7 @@ function shareRosterToWhatsApp() {
 
   let msg = `🏏 *${currentMatchData.matchTitle}* 🏏\n`;
   msg += `📅 *Time:* ${currentMatchData.matchTime}\n`;
-  msg += `💰 *Entry Fee:* ${currentMatchData.entryFee} | *Saving:* ${currentMatchData.savingAmount}\n`;
+  msg += `💰 *Entry Fee:* ${currentMatchData.entryFee} | *Remaining Balance:* ${formatCurrency(getRemainingBalance())}\n`;
   msg += `📍 *Venue:* ${currentMatchData.locationName}\n`;
   msg += `🗺️ *Map:* ${currentMatchData.locationMapUrl}\n\n`;
 
@@ -485,62 +500,57 @@ function closeAdminModal() {
   }
 }
 
-function handleAdminLogin(e) {
+async function handleAdminLogin(e) {
   e.preventDefault();
   const emailInput = document.getElementById("adminEmail").value.trim();
-  const passInput = document.getElementById("adminPassword").value.trim();
+  const passInput = document.getElementById("adminPassword").value;
   const errorAlert = document.getElementById("adminLoginError");
 
-  // Authentication check as requested:
-  // Email: sameerarif133@gmail.com
-  // Password: Sameer123
-  if (emailInput.toLowerCase() === APP_CONFIG.adminEmail.toLowerCase() && passInput === APP_CONFIG.adminPass) {
-    // Login Success
-    localStorage.setItem(APP_CONFIG.adminSessionKey, JSON.stringify({
-      email: APP_CONFIG.adminEmail,
-      loginAt: Date.now()
-    }));
-
-    if (errorAlert) errorAlert.style.display = "none";
-    showToast("👑 Welcome Sameer Arif! Admin Logged In.", "gold");
-    CricketAudio.playSuccessChime();
-
-    // Refresh modal to show dashboard
-    openAdminModal();
-    checkAdminSession();
-  } else {
-    // Login Failed
+  if (!firebaseAuth || emailInput.toLowerCase() !== APP_CONFIG.adminEmail.toLowerCase()) {
     if (errorAlert) {
       errorAlert.style.display = "flex";
-      errorAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Ghalat Email ya Password! Required: sameerarif133@gmail.com`;
+      errorAlert.textContent = "Use the authorized Firebase admin email.";
     }
-    showToast("Invalid Admin credentials!", "error");
+    return;
+  }
+  try {
+    await firebaseAuth.signInWithEmailAndPassword(emailInput, passInput);
+    if (errorAlert) errorAlert.style.display = "none";
+    showToast("Firebase admin sign-in successful.", "gold");
+    CricketAudio.playSuccessChime();
+    openAdminModal();
+  } catch (error) {
+    console.error("Firebase admin sign-in failed:", error);
+    if (errorAlert) {
+      errorAlert.style.display = "flex";
+      errorAlert.textContent = "Firebase sign-in failed. Check the account, password, and Firebase Authentication settings.";
+    }
+    showToast("Firebase admin sign-in failed.", "error");
   }
 }
 
-function handleAdminLogout() {
-  localStorage.removeItem(APP_CONFIG.adminSessionKey);
-  showToast("Admin logged out successfully.", "info");
-  closeAdminModal();
-  checkAdminSession();
+async function handleAdminLogout() {
+  try {
+    await firebaseAuth.signOut();
+    showToast("Admin signed out.", "info");
+    closeAdminModal();
+  } catch (error) {
+    console.error("Firebase admin sign-out failed:", error);
+    showToast("Could not sign out from Firebase.", "error");
+  }
 }
 
-function checkAdminSession(silent = false) {
-  const session = localStorage.getItem(APP_CONFIG.adminSessionKey);
+function checkAdminSession() {
   const adminBtnText = document.getElementById("adminBtnText");
   const quickBar = document.getElementById("adminQuickBar");
-
-  if (session) {
-    try {
-      const data = JSON.parse(session);
-      if (data && data.email === APP_CONFIG.adminEmail) {
-        if (adminBtnText) adminBtnText.textContent = "Admin (Sameer)";
-        if (quickBar) quickBar.style.display = "block";
-        return true;
-      }
-    } catch (e) {}
+  const isAdmin = Boolean(firebaseAuth && firebaseAuth.currentUser &&
+    firebaseAuth.currentUser.email &&
+    firebaseAuth.currentUser.email.toLowerCase() === APP_CONFIG.adminEmail.toLowerCase());
+  if (isAdmin) {
+    if (adminBtnText) adminBtnText.textContent = "Admin";
+    if (quickBar) quickBar.style.display = "block";
+    return true;
   }
-
   if (adminBtnText) adminBtnText.textContent = "Admin Login";
   if (quickBar) quickBar.style.display = "none";
   return false;
@@ -561,7 +571,7 @@ function togglePasswordVisibility(id) {
 }
 
 function switchAdminTab(tabName) {
-  const tabs = ["details", "players", "cloud"];
+  const tabs = ["details", "players", "expenses", "cloud"];
   tabs.forEach(t => {
     const btn = document.getElementById("btnAdminTab" + capitalize(t));
     const content = document.getElementById("adminTab" + capitalize(t));
@@ -577,6 +587,9 @@ function switchAdminTab(tabName) {
   if (tabName === "players") {
     renderAdminPlayerManager();
   }
+  if (tabName === "expenses") {
+    renderAdminExpenses();
+  }
 }
 
 function capitalize(s) {
@@ -584,47 +597,42 @@ function capitalize(s) {
 }
 
 function populateAdminForm() {
-  document.getElementById("editMatchTitle").value = currentMatchData.matchTitle || "SATURDAY INDOOR CRICKET MATCH";
-  document.getElementById("editEntryFee").value = currentMatchData.entryFee || "Rs. 500";
-  document.getElementById("editMatchTime").value = currentMatchData.matchTime || "Saturday 09:00 PM - 12:00 AM";
-  document.getElementById("editSaving").value = currentMatchData.savingAmount || "Rs. 2,000";
-  document.getElementById("editLocationName").value = currentMatchData.locationName || "Indoor Cricket Arena";
-  document.getElementById("editLocationLink").value = currentMatchData.locationMapUrl || "https://maps.google.com/?q=Indoor+Cricket+Arena";
+  document.getElementById("editMatchTitle").value = currentMatchData.matchTitle || "";
+  document.getElementById("editEntryFee").value = currentMatchData.entryFee || "";
+  document.getElementById("editMatchTime").value = currentMatchData.matchTime || "";
+  document.getElementById("editLocationName").value = currentMatchData.locationName || "";
+  document.getElementById("editLocationLink").value = currentMatchData.locationMapUrl || "";
   document.getElementById("editMatchNotes").value = currentMatchData.matchNotes || "";
   
-  const cloudInput = document.getElementById("customCloudIdInput");
-  if (cloudInput) cloudInput.value = APP_CONFIG.cloudRoomId;
-
-  // Populate Firebase inputs
-  if (typeof getActiveFirebaseConfig === 'function') {
-    const fbCfg = getActiveFirebaseConfig();
-    const urlInput = document.getElementById("fbDbUrlInput");
-    const keyInput = document.getElementById("fbApiKeyInput");
-    if (urlInput && fbCfg.databaseURL) urlInput.value = fbCfg.databaseURL;
-    if (keyInput && fbCfg.apiKey) keyInput.value = fbCfg.apiKey;
-  }
 }
 
-function handleAdminDetailsSave(e) {
+async function handleAdminDetailsSave(e) {
   e.preventDefault();
   CricketAudio.playBatHit();
 
-  // Save new values directly from admin input
-  currentMatchData.matchTitle = document.getElementById("editMatchTitle").value.trim();
-  currentMatchData.entryFee = document.getElementById("editEntryFee").value.trim();
-  currentMatchData.matchTime = document.getElementById("editMatchTime").value.trim();
-  currentMatchData.savingAmount = document.getElementById("editSaving").value.trim();
-  currentMatchData.locationName = document.getElementById("editLocationName").value.trim();
-  currentMatchData.locationMapUrl = document.getElementById("editLocationLink").value.trim();
-  currentMatchData.matchNotes = document.getElementById("editMatchNotes").value.trim();
-  currentMatchData.lastUpdated = new Date().toISOString();
+  if (!checkAdminSession(true)) {
+    showToast("Please sign in with the authorized Firebase admin account.", "error");
+    return;
+  }
 
-  saveLocalData();
-  renderMatchDetails();
-  syncToCloud();
+  const details = {
+    matchTitle: document.getElementById("editMatchTitle").value.trim(),
+    entryFee: document.getElementById("editEntryFee").value.trim(),
+    matchTime: document.getElementById("editMatchTime").value.trim(),
+    locationName: document.getElementById("editLocationName").value.trim(),
+    locationMapUrl: document.getElementById("editLocationLink").value.trim(),
+    matchNotes: document.getElementById("editMatchNotes").value.trim(),
+    lastUpdated: new Date().toISOString()
+  };
 
-  showToast("✅ Match details updated & synced to all phones!", "gold");
-  closeAdminModal();
+  try {
+    await firebaseDb.ref("matchData").update(details);
+    showToast("Match details saved to Firebase.", "gold");
+    closeAdminModal();
+  } catch (error) {
+    console.error("Failed to save match details:", error);
+    showToast("Could not save match details to Firebase. Check database rules.", "error");
+  }
 }
 
 // Admin Player Management
@@ -656,329 +664,290 @@ function renderAdminPlayerManager() {
   `).join("");
 }
 
-function togglePlayerStatus(id) {
+async function togglePlayerStatus(id) {
   const player = currentMatchData.players.find(p => p.id === id);
-  if (player) {
-    player.status = player.status === "ON" ? "OFF" : "ON";
-    player.timestamp = Date.now();
-    saveLocalData();
-    renderCounters();
-    renderRosterLists();
-    renderAdminPlayerManager();
-    syncToCloud();
-    showToast(`Updated ${player.name} to ${player.status}`, "info");
-  }
+  if (!player) return;
+  const nextStatus = player.status === "ON" ? "OFF" : "ON";
+  await updatePlayer(id, { status: nextStatus, timestamp: Date.now() });
 }
 
-function deletePlayer(id) {
+async function deletePlayer(id) {
   const player = currentMatchData.players.find(p => p.id === id);
   const name = player ? player.name : "Player";
   if (confirm(`Are you sure you want to remove "${name}" from the roster?`)) {
-    currentMatchData.players = currentMatchData.players.filter(p => p.id !== id);
-    saveLocalData();
-    renderCounters();
-    renderRosterLists();
-    renderAdminPlayerManager();
-    syncToCloud();
-    showToast(`Removed "${name}" from list.`, "info");
+    await updatePlayer(id, null);
   }
 }
 
-function confirmResetAllPlayers() {
-  if (confirm("⚠️ CLEAR ATTENDANCE:\nKya aap naye Saturday match k liye puri player list reset karna chahte hain?")) {
-    currentMatchData.players = [];
-    saveLocalData();
-    renderCounters();
-    renderRosterLists();
-    renderAdminPlayerManager();
-    syncToCloud();
-    showToast("All player records reset for new match week!", "gold");
+async function updatePlayer(id, updates) {
+  if (!checkAdminSession(true)) {
+    showToast("Please sign in with the authorized Firebase admin account.", "error");
+    return;
   }
+  try {
+    const playerName = nameForPlayer(id);
+    const result = await firebaseDb.ref("matchData/players").transaction(players => {
+      const roster = normalizePlayers(players);
+      const index = roster.findIndex(player => player.id === id);
+      if (index < 0) return;
+      if (updates) roster[index] = { ...roster[index], ...updates };
+      else roster.splice(index, 1);
+      return playerMap(roster);
+    });
+    if (!result.committed) throw new Error("The roster update was not committed.");
+    showToast(updates ? `Updated ${playerName} to ${updates.status}.` : `Removed "${playerName}" from the roster.`, "info");
+  } catch (error) {
+    console.error("Failed to update roster:", error);
+    showToast("Could not update roster in Firebase. Check database rules.", "error");
+  }
+}
+
+function nameForPlayer(id) {
+  const player = currentMatchData.players.find(item => item.id === id);
+  return player ? player.name : "player";
+}
+
+async function confirmResetAllPlayers() {
+  if (confirm("⚠️ CLEAR ATTENDANCE:\nKya aap naye Saturday match k liye puri player list reset karna chahte hain?")) {
+    if (!checkAdminSession(true)) {
+      showToast("Please sign in with the authorized Firebase admin account.", "error");
+      return;
+    }
+    try {
+      await firebaseDb.ref("matchData/players").set([]);
+      showToast("Player roster cleared in Firebase.", "gold");
+    } catch (error) {
+      console.error("Failed to clear roster:", error);
+      showToast("Could not clear roster in Firebase. Check database rules.", "error");
+    }
+  }
+}
+
+async function handleExpenseSubmit(e) {
+  e.preventDefault();
+  if (!checkAdminSession() || !firebaseDb) {
+    showToast("Sign in with the authorized Firebase admin account first.", "error");
+    return;
+  }
+
+  const descriptionInput = document.getElementById("expenseDescription");
+  const amountInput = document.getElementById("expenseAmount");
+  const description = descriptionInput.value.trim();
+  const amount = Number(amountInput.value);
+  if (!description || !Number.isFinite(amount) || amount <= 0) {
+    showToast("Enter an expense description and a valid amount.", "error");
+    return;
+  }
+
+  const expensesRef = firebaseDb.ref("matchData/expenses");
+  const expense = {
+    id: expensesRef.push().key,
+    description,
+    amount,
+    timestamp: Date.now()
+  };
+  if (!expense.id) {
+    showToast("Could not create an expense record.", "error");
+    return;
+  }
+
+  try {
+    const result = await expensesRef.transaction(expenses => {
+      const records = expenseMap(normalizeExpenses(expenses));
+      records[expense.id] = expense;
+      return records;
+    });
+    if (!result.committed) throw new Error("Expense was not saved.");
+    e.target.reset();
+    showToast("Expense saved to Firebase.", "gold");
+  } catch (error) {
+    console.error("Failed to save expense:", error);
+    showToast("Could not save expense to Firebase. Check database rules.", "error");
+  }
+}
+
+async function deleteExpense(id) {
+  if (!checkAdminSession() || !firebaseDb) {
+    showToast("Sign in with the authorized Firebase admin account first.", "error");
+    return;
+  }
+  const expense = currentMatchData.expenses.find(record => record.id === id);
+  if (!expense || !confirm(`Delete expense "${expense.description}"?`)) return;
+
+  try {
+    const expensesRef = firebaseDb.ref("matchData/expenses");
+    const result = await expensesRef.transaction(expenses => {
+      const records = expenseMap(normalizeExpenses(expenses));
+      if (!records[id]) return;
+      delete records[id];
+      return records;
+    });
+    if (!result.committed) throw new Error("Expense deletion was not committed.");
+    showToast("Expense deleted from Firebase.", "info");
+  } catch (error) {
+    console.error("Failed to delete expense:", error);
+    showToast("Could not delete expense from Firebase. Check database rules.", "error");
+  }
+}
+
+function renderExpenses() {
+  const list = document.getElementById("expenseHistoryList");
+  const totals = [
+    ["totalCollected", formatCurrency(getTotalCollected())],
+    ["totalExpenses", formatCurrency(getTotalExpenses())],
+    ["adminTotalCollected", formatCurrency(getTotalCollected())],
+    ["adminTotalExpenses", formatCurrency(getTotalExpenses())],
+    ["adminRemainingBalance", formatCurrency(getRemainingBalance())]
+  ];
+  totals.forEach(([id, amount]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = amount;
+  });
+  if (!list) return;
+
+  const expenses = [...currentMatchData.expenses].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+  list.innerHTML = expenses.length
+    ? expenses.map(expense => `
+      <div class="expense-history-item">
+        <div>
+          <strong>${escapeHtml(expense.description)}</strong>
+          <small>${new Date(Number(expense.timestamp) || 0).toLocaleDateString()}</small>
+        </div>
+        <span>${formatCurrency(expense.amount)}</span>
+      </div>
+    `).join("")
+    : `<div class="empty-state"><p>No expenses recorded yet.</p></div>`;
+}
+
+function renderAdminExpenses() {
+  const container = document.getElementById("expenseManagementList");
+  if (!container) return;
+  const expenses = [...currentMatchData.expenses].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+  container.innerHTML = expenses.length
+    ? expenses.map(expense => `
+      <div class="admin-player-item">
+        <div>
+          <strong>${escapeHtml(expense.description)}</strong>
+          <small style="color:var(--text-muted); display:block">${new Date(Number(expense.timestamp) || 0).toLocaleString()}</small>
+        </div>
+        <div class="admin-player-btns">
+          <strong>${formatCurrency(expense.amount)}</strong>
+          <button class="btn-icon-del" onclick="deleteExpense('${expense.id}')" title="Delete expense">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+    `).join("")
+    : `<div class="empty-state"><p>No expenses recorded yet.</p></div>`;
 }
 
 // =========================================================
 // REAL-TIME CLOUD DATA SYNCHRONIZATION
 // =========================================================
-function saveLocalData() {
-  try {
-    localStorage.setItem(APP_CONFIG.localStorageKey, JSON.stringify(currentMatchData));
-  } catch (e) {
-    console.error("Local storage save error", e);
-  }
+function normalizePlayers(players) {
+  if (Array.isArray(players)) return players.filter(Boolean);
+  if (players && typeof players === "object") return Object.values(players).filter(Boolean);
+  return [];
 }
 
-function loadDataFromLocalStorage() {
-  try {
-    const raw = localStorage.getItem(APP_CONFIG.localStorageKey);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      currentMatchData = { ...DEFAULT_MATCH_DATA, ...parsed };
-    }
-  } catch (e) {
-    currentMatchData = { ...DEFAULT_MATCH_DATA };
-  }
+function playerMap(players) {
+  return players.reduce((records, player) => {
+    records[player.id] = player;
+    return records;
+  }, {});
 }
 
-let detectedBackend = "checking";
+function normalizeExpenses(expenses) {
+  if (Array.isArray(expenses)) return expenses.filter(Boolean);
+  if (expenses && typeof expenses === "object") return Object.values(expenses).filter(Boolean);
+  return [];
+}
+
+function expenseMap(expenses) {
+  return expenses.reduce((records, expense) => {
+    records[expense.id] = expense;
+    return records;
+  }, {});
+}
+
+function renderFirebaseData(value) {
+  currentMatchData = {
+    ...DEFAULT_MATCH_DATA,
+    ...(value || {}),
+    players: normalizePlayers(value && value.players),
+    expenses: normalizeExpenses(value && value.expenses)
+  };
+  renderMatchDetails();
+  renderCounters();
+  if (document.getElementById("viewMoreModal").style.display === "flex") {
+    renderRosterLists();
+  }
+  if (document.getElementById("adminTabPlayers").style.display !== "none") {
+    renderAdminPlayerManager();
+  }
+  if (document.getElementById("adminTabExpenses").style.display !== "none") {
+    renderAdminExpenses();
+  }
+  renderExpenses();
+}
 
 async function fetchCloudData() {
+  if (!firebaseDb) {
+    updateBackendStatusUI("Firebase is not configured.");
+    return false;
+  }
   setSyncStatus(true);
-
-  // 1. First try local / Netlify Serverless API (/api/match)
   try {
-    const apiRes = await fetch('/api/match');
-    if (apiRes.ok) {
-      const apiJson = await apiRes.json();
-      if (apiJson && apiJson.success && apiJson.data) {
-        detectedBackend = "api";
-        currentMatchData = { ...currentMatchData, ...apiJson.data };
-        saveLocalData();
-        renderMatchDetails();
-        renderCounters();
-        if (document.getElementById("viewMoreModal").style.display === "flex") {
-          renderRosterLists();
-        }
-        updateBackendStatusUI("Node.js / Netlify API Connected");
-        setSyncStatus(false);
-        return;
-      }
-    }
-  } catch (apiErr) {
-    // /api not available (e.g. static host without serverless functions)
+    const snapshot = await firebaseDb.ref("matchData").once("value");
+    renderFirebaseData(snapshot.val());
+    updateBackendStatusUI("Firebase Realtime Database connected.");
+    updateLastSyncTime();
+    return true;
+  } catch (error) {
+    console.error("Failed to fetch match data from Firebase:", error);
+    updateBackendStatusUI("Firebase read failed. Check database rules.");
+    showToast("Could not fetch match data from Firebase.", "error");
+    return false;
+  } finally {
+    setSyncStatus(false);
   }
-
-  // 2. Fallback to Cloud Storage Room
-  if (APP_CONFIG.cloudRoomId) {
-    try {
-      const res = await fetch(`${APP_CONFIG.cloudApiBase}/${APP_CONFIG.cloudRoomId}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.data) {
-          detectedBackend = "cloud";
-          const cloudData = json.data;
-          if (cloudData.entryFee || cloudData.players) {
-            currentMatchData = { ...currentMatchData, ...cloudData };
-            saveLocalData();
-            renderMatchDetails();
-            renderCounters();
-            if (document.getElementById("viewMoreModal").style.display === "flex") {
-              renderRosterLists();
-            }
-            updateBackendStatusUI("Live Cloud Sync Connected");
-          }
-        }
-      }
-    } catch (e) {
-      detectedBackend = "local";
-      updateBackendStatusUI("Local Offline Storage Active");
-    }
-  }
-  setSyncStatus(false);
-}
-
-async function syncToCloud() {
-  setSyncStatus(true);
-
-  // 0. Sync to Firebase (Firestore & Realtime Database)
-  if (firebaseApp) {
-    const payload = {
-      ...currentMatchData,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Sync to Firestore
-    if (firestoreDb) {
-      try {
-        firestoreDb.collection('matches').doc('saturday').set(payload, { merge: true })
-          .then(() => {
-            isFirebaseConnected = true;
-            updateLastSyncTime();
-          })
-          .catch(e => console.log("Firestore push:", e.message));
-      } catch (e) {}
-    }
-
-    // Sync to Realtime DB
-    if (firebaseDb) {
-      try {
-        firebaseDb.ref('matchData').set(payload)
-          .then(() => {
-            isFirebaseConnected = true;
-            updateLastSyncTime();
-          })
-          .catch(e => console.log("RTDB push:", e.message));
-      } catch (e) {}
-    }
-  }
-
-  // 1. If backend is /api, sync to API
-  if (detectedBackend === "api") {
-    try {
-      const res = await fetch('/api/admin/match', {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentMatchData)
-      });
-      if (res.ok) {
-        updateLastSyncTime();
-        setSyncStatus(false);
-        return;
-      }
-    } catch (err) {}
-  }
-
-  // 2. Sync to Cloud Storage Room
-  if (APP_CONFIG.cloudRoomId) {
-    try {
-      const payload = {
-        name: "Sam-Cricket-Portal-Live-Data",
-        data: {
-          ...currentMatchData,
-          lastUpdated: new Date().toISOString()
-        }
-      };
-
-      const res = await fetch(`${APP_CONFIG.cloudApiBase}/${APP_CONFIG.cloudRoomId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        updateLastSyncTime();
-      }
-    } catch (e) {
-      console.error("Cloud push failed:", e);
-    }
-  }
-  setSyncStatus(false);
 }
 
 // =========================================================
-// FIREBASE REALTIME DATABASE & FIRESTORE ENGINE
+// FIREBASE AUTHENTICATION & REALTIME DATABASE
 // =========================================================
-let firestoreDb = null;
-
 function initFirebase() {
   try {
-    if (typeof firebase !== 'undefined' && typeof getActiveFirebaseConfig === 'function') {
-      const cfg = getActiveFirebaseConfig();
-      if (!cfg || !cfg.apiKey) return;
-
-      if (!firebase.apps.length) {
-        firebaseApp = firebase.initializeApp(cfg);
-      } else {
-        firebaseApp = firebase.app();
-      }
-
-      // Populate Admin UI Inputs
-      const urlInput = document.getElementById("fbDbUrlInput");
-      const keyInput = document.getElementById("fbApiKeyInput");
-      if (urlInput && cfg.databaseURL) urlInput.value = cfg.databaseURL;
-      if (keyInput && cfg.apiKey) keyInput.value = cfg.apiKey;
-
-      // 1. Listen to Firestore
-      try {
-        if (typeof firebase.firestore === 'function') {
-          firestoreDb = firebase.firestore();
-          firestoreDb.collection('matches').doc('saturday').onSnapshot((doc) => {
-            if (doc.exists) {
-              const val = doc.data();
-              if (val && (val.entryFee || val.players)) {
-                isFirebaseConnected = true;
-                detectedBackend = "firebase";
-                currentMatchData = { ...currentMatchData, ...val };
-                saveLocalData();
-                renderMatchDetails();
-                renderCounters();
-                if (document.getElementById("viewMoreModal").style.display === "flex") {
-                  renderRosterLists();
-                }
-                updateBackendStatusUI("Firebase Database Connected (Live 0ms)");
-                updateLastSyncTime();
-                const dot = document.getElementById("firebaseStatusDot");
-                if (dot) dot.style.background = "#00e676";
-              }
-            }
-          }, (err) => {
-            console.log("Firestore listener note:", err.message);
-          });
-        }
-      } catch (fsErr) {
-        console.log("Firestore init note:", fsErr);
-      }
-
-      // 2. Listen to Realtime Database
-      try {
-        if (typeof firebase.database === 'function' && cfg.databaseURL) {
-          firebaseDb = firebase.database();
-          firebaseDb.ref('matchData').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val && (val.entryFee || val.players)) {
-              isFirebaseConnected = true;
-              detectedBackend = "firebase";
-              currentMatchData = { ...currentMatchData, ...val };
-              saveLocalData();
-              renderMatchDetails();
-              renderCounters();
-              if (document.getElementById("viewMoreModal").style.display === "flex") {
-                renderRosterLists();
-              }
-              updateBackendStatusUI("Firebase Realtime DB Connected (Live 0ms)");
-              updateLastSyncTime();
-              const dot = document.getElementById("firebaseStatusDot");
-              if (dot) dot.style.background = "#00e676";
-            }
-          }, (err) => {
-            console.log("RTDB listener note:", err.message);
-          });
-        }
-      } catch (rtdbErr) {
-        console.log("RTDB init note:", rtdbErr);
-      }
+    if (typeof firebase === "undefined" || !FIREBASE_CONFIG.apiKey) {
+      throw new Error("Firebase SDK or configuration is missing.");
     }
+    firebaseApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = firebaseApp.auth();
+    firebaseDb = firebaseApp.database();
+    firebaseAuth.onAuthStateChanged(() => checkAdminSession());
+    firebaseDb.ref("matchData").on("value", snapshot => {
+      renderFirebaseData(snapshot.val());
+      updateBackendStatusUI("Firebase Realtime Database connected.");
+      updateLastSyncTime();
+    }, error => {
+      console.error("Firebase database listener failed:", error);
+      updateBackendStatusUI("Firebase read failed. Check database rules.");
+    });
+    updateBackendStatusUI("Connecting to Firebase...");
   } catch (err) {
-    console.warn("Firebase general note:", err);
+    console.error("Firebase initialization failed:", err);
+    updateBackendStatusUI("Firebase unavailable. Check app configuration.");
+    showToast("Firebase could not start. Check the Firebase configuration.", "error");
   }
-}
-
-function saveFirebaseSettingsFromUI() {
-  const urlInput = document.getElementById("fbDbUrlInput");
-  const keyInput = document.getElementById("fbApiKeyInput");
-  const dbUrl = urlInput ? urlInput.value.trim() : "";
-  const apiKey = keyInput ? keyInput.value.trim() : "";
-
-  const currentCfg = typeof getActiveFirebaseConfig === 'function' ? getActiveFirebaseConfig() : {};
-  const updated = {
-    ...currentCfg,
-    apiKey: apiKey || currentCfg.apiKey,
-    databaseURL: dbUrl || currentCfg.databaseURL
-  };
-
-  if (typeof saveActiveFirebaseConfig === 'function') {
-    saveActiveFirebaseConfig(updated);
-  }
-
-  showToast("Firebase Settings Saved! Connecting...", "gold");
-  initFirebase();
-  setTimeout(() => syncToCloud(), 500);
 }
 
 function updateBackendStatusUI(statusText) {
   const statusEl = document.getElementById("cloudStatusText");
   if (statusEl) {
-    statusEl.textContent = "Backend: " + statusText;
+    statusEl.textContent = statusText;
   }
-}
-
-function startCloudSync() {
-  fetchCloudData();
-  if (cloudSyncTimer) clearInterval(cloudSyncTimer);
-  cloudSyncTimer = setInterval(() => {
-    if (!document.hidden) {
-      fetchCloudData();
-    }
-  }, APP_CONFIG.pollIntervalMs);
+  const dot = document.getElementById("firebaseStatusDot");
+  if (dot) dot.style.background = statusText.includes("connected") ? "#00e676" : "#ff5252";
 }
 
 function setSyncStatus(syncing) {
@@ -1001,34 +970,8 @@ function updateLastSyncTime() {
 }
 
 async function forceCloudSync(userTriggered = false) {
-  await fetchCloudData();
-  if (userTriggered) {
-    showToast("Cloud synced successfully!", "gold");
-  }
-}
-
-async function createNewCloudRoom() {
-  if (!confirm("Create a new separate cloud room for this portal?")) return;
-  try {
-    showToast("Creating new cloud room...", "info");
-    const res = await fetch(APP_CONFIG.cloudApiBase, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "Sam-Cricket-Portal-Live-Data",
-        data: currentMatchData
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      APP_CONFIG.cloudRoomId = data.id;
-      document.getElementById("customCloudIdInput").value = data.id;
-      showToast("New cloud room active: " + data.id, "gold");
-      syncToCloud();
-    }
-  } catch (e) {
-    showToast("Failed to create cloud room", "error");
-  }
+  const loaded = await fetchCloudData();
+  if (userTriggered && loaded) showToast("Firebase data refreshed.", "gold");
 }
 
 // =========================================================
