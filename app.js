@@ -452,7 +452,7 @@ function shareRosterToWhatsApp() {
     });
   }
 
-  msg += `\n🔗 *Check Portal Live:* https://sam-cricket-potal.netlify.app`;
+  msg += `\n🔗 *Check Portal Live:* https://sam-cricket-portal.netlify.app`;
 
   const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
